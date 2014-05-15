@@ -132,10 +132,11 @@ while 1:
     ###################################################################
     # print out the data from the database
     ###################################################################
-    for ip in connected:
+    for ip in ips:
         sql = "select FirstName as Owner from Addr Left join Persons on Persons.ID=Owner where IPaddr='" + ip + "';"
         results = querydb(sql)
-        print results
+        for row in results:
+            print row[0]
     
     print current_time, '[', lock_status,'] %s' % ', '.join(map(str, connected))
 
