@@ -11,13 +11,13 @@ import subprocess
 
 SAM = '10.0.0.111'
 CHAUNCEY = '10.0.0.72'
-ASHLEY = '10.0.0.55'
+ASHLEY = '10.0.0.54'
 
-ips = ["10.0.0.1", "10.0.0.9", "10.0.0.113", "10.0.0.111", "10.0.0.72", "10.0.0.55"]
+ips = ["10.0.0.1", "10.0.0.9", "10.0.0.113", "10.0.0.111", "10.0.0.72", "10.0.0.54"]
 connected = ["10.0.0.1", "10.0.0.9"]
 lock_status = 0
 night_lock = 0
-current_time = int(strftime("%H", gmtime()))
+#current_time = int(strftime("%H", gmtime()))
 
 def lock():
     global lock_status
@@ -30,12 +30,13 @@ def unlock():
     lock_status = 0
 
 def ashley():
-    unlock()
+    from time import sleep
+	unlock()
     time.sleep(6)
     lock()
 
 while 1:
-    #current_time = int(strftime("%H", gmtime()))
+    current_time = int(strftime("%H", gmtime()))
     for ip in ips:
         ret = subprocess.call("ping -c 1 -w 1 -n %s" % ip,
                 shell=True,
@@ -63,8 +64,8 @@ while 1:
                 lock()
 
     # Testing auto lock feature
-    if current_time > 24:
-        current_time = 0
+    #if current_time > 24:
+    #    current_time = 0
 
     if current_time >= 20:
         if night_lock != 1:
