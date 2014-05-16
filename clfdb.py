@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python
 ##################################################################
 # Program : Califlower database functions
 # Author : Chauncey Yan
@@ -20,6 +20,8 @@ db = MySQLdb.connect("localhost","root","iamroot","AutoDoorClients" )
 cursor = db.cursor()
 ###################################################################
 # Retrive the IP data from the database
+# input : A string query
+# output : a nested list of string
 ###################################################################
 def querydb (query):
     try:
@@ -33,17 +35,50 @@ def querydb (query):
         db.rollback()
 
 ###################################################################
-# query the ips with function querydb
+# Fetch only first col from the database.
+# input : A string qurey
+# output : A list of string
 ###################################################################
-def keyip_all():
-    ip_arr= [""]
-    sql = "select IPaddr from Addr Left join Persons on Persons.ID=Owner where DeviceName='KeyPhone'"
+def fetch_fcol(sql):
+    col= [""]
     results = querydb(sql)
     for row in results: 
-        ip_arr.append(row[0])
+        col.append(row[0])
     # Now print fetched result
-    print ", ".join(map(str, ip_arr))
+    #print ", ".join(map(str, col))
+    return col
+
+###################################################################
+# Fetch the all ips from db
+# input : None
+# output : A list of ip string
+###################################################################
+def ip_all():
+    sql = "select IPaddr from Addr"
+    ip_arr=fetch_fcol(sql)
     return ip_arr
+
+###################################################################
+# Fetch all keyphone ips 
+# input : None
+# output : A list of key ips string
+###################################################################
+def keyip_all():
+    sql = "select IPaddr from Addr where DeviceName='KeyPhone'"
+    keyip_arr=fetch_fcol(sql)
+    return keyip_arr
+
+###################################################################
+# Fetch the FirstName acording to ip
+# input : A string ip
+# output : A string Firstname
+###################################################################
+def ip2name(ip):
+	sql="select FirstName from Addr right join Persons on Persons.ID=Owner where IPaddr=\"" + ip + "\";"
+	name=fetch_fcol(sql)
+	#print name
+	return name
+
 ###################################################################
 # print out the data from the database
 ###################################################################
