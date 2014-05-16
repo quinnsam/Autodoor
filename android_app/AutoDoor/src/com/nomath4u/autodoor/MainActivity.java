@@ -44,11 +44,7 @@ public class MainActivity extends Activity
 		setLockedText();
 	}
 	public void setLockedText(){
-		if(locked){
-			lockedText.setText("Locked");
-		} else {
-			lockedText.setText("Unlocked");
-		}
+		lockedText.setText(locked ? R.string.lock : R.string.unlock);
 		lockedText.invalidate();
 	}
 	public void sendInfo(View view){
