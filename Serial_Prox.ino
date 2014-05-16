@@ -17,13 +17,15 @@
 #define LOCK        40
 #define UNLOCK      120
 
+//Prototypes
+int lock(int);
 
 // Set the sensor address here
 const uint8_t sensorAddr = SENSOR_ADDR_OFF_OFF;
 int led_pin = 13;       // LED connected to digital pin 13
 int servo_pin = 9;      //Digital pin to control the servo
 int const pot_pin = A0; // analog pin used to connect the potentiometer
-int pot_val;            // variable to read the value from the analog pin 
+int pot_val = -1;            // variable to read the value from the analog pin 
 int input;
 
 // Servo Object
@@ -142,8 +144,7 @@ int lock_status() {
     pot_val = analogRead(pot_pin); // read the value of the potentiometer
     angle = map(pot_val, 0, 1023, 0, 179);
 
-    Serial.print("ANGLE LOC: ");
-    Serial.println(angle);
+    print_info();
 
     if(angle > (LOCK -20) && angle < (LOCK + 20)){
         return 1;
