@@ -9,10 +9,10 @@ from threading import Thread
 from time import gmtime, strftime, sleep
 import subprocess
 #import datetime
-import MySQLdb
 #import serial
 import os
 import RPi.GPIO as GPIO
+import clfdb
 
 def arduino_watcher():
     print 'Arduino watcher has spawned,', os.getpid()
@@ -24,62 +24,23 @@ def arduino_watcher():
 
 
 def handler(signum, frame):
-    switch signum:
+    switch signum 
         case 8:
             unlock()
             #sleep
             lock()
         case 7:
             # Poll form the arduino for what the new lock state is.
+    
 
-###############################################################################
-# Retrive the IP data from the database
-###############################################################################
-def querydb (query):
-    # Open database connection
-    db = MySQLdb.connect("localhost","root","iamroot","AutoDoorClients" )
+ips=clfdb.keyip_all()
 
-    # prepare a cursor object using cursor() method
-    cursor = db.cursor()
-
-    # Set the sql to query
-    sql = query
-    try:
-    # Execute the SQL command
-        cursor.execute(sql)
-        results = cursor.fetchall()
-        return results
-    except:
-        # Rollback in case there is any error
-        print "Error: unable to fecth data"
-        db.rollback()
-
-
-###############################################################################
-# query the ips with function querydb
-###############################################################################
-
-ip_arr=["10.0.0.1", "10.0.0.9"]
-sql = "select FirstName as Owner, IPaddr, MacAddr from Addr Left join Persons on Persons.ID=Owner where DeviceName='Phone'"
-results = querydb(sql)
-for row in results:
-    owner = row[0]
-    ipaddr = row[1]
-    macaddr = row[2]
-    ip_arr.append(row[1])
-    # Now print fetched result
-    print "owner=%s,ip=%s,mac=%s" %(owner, ipaddr, macaddr)
-
-
-print ip_arr
-ips=ip_arr
 ###############################################################################
 # Setting Global varibles and environment.
 ###############################################################################
 SAM = '10.0.0.111'
 ASHLEY = '10.0.0.54'
 
-#ips = ["10.0.0.1", "10.0.0.9", "10.0.0.113", "10.0.0.111", "10.0.0.72", "10.0.0.54"]
 connected = ["10.0.0.1", "10.0.0.9"]
 lock_status = 0
 night_lock = 0
@@ -161,17 +122,10 @@ while 1:
             if (len(connected) == 2 and lock_status == 0):
                 lock()
 
-    ###################################################################
-    # print out the data from the database
-    ###################################################################
-    for ip in ips:
-        sql = "select FirstName as Owner from Addr Left join Persons on Persons.ID=Owner where IPaddr='" + ip + "';"
-        results = querydb(sql)
-        for row in results:
-            print row[0]
-
+    clfdb.printname_ip(connected)
     print current_time, '[', lock_status,'] %s' % ', '.join(map(str, connected))
 
-# disconnect from server
-db.close()
+
+# Disconneting from mysql server
+clfdb.db_close()
 
