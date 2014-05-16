@@ -22,17 +22,6 @@ def arduino_watcher():
         if(GPIO.input(23) ==1):
             print 'Arduino signal recived!'
 
-
-def handler(signum, frame):
-    switch signum 
-        case 8:
-            unlock()
-            #sleep
-            lock()
-        case 7:
-            # Poll form the arduino for what the new lock state is.
-    
-
 ips=clfdb.keyip_all()
 
 ###############################################################################
