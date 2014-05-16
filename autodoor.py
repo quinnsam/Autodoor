@@ -9,18 +9,23 @@ from threading import Thread
 from time import gmtime, strftime, sleep
 import subprocess
 #import datetime
-#import serial
+import serial
 import os
 import RPi.GPIO as GPIO
 import clfdb
 
 def arduino_watcher():
     print 'Arduino watcher has spawned,', os.getpid()
-    GPIO.setmode(GPIO.BOARD)
+    GPIO.setmode(GPIO.BCM)
     GPIO.setup(23, GPIO.IN, pull_up_down.PUD_DOWN)
     while (1):
-        if(GPIO.input(23) ==1):
+        if(GPIO.input(23) ==1 and running != 1):
             print 'Arduino signal recived!'
+            running = 1
+        
+        if(GPIO.input(23) == 0 and running != 0):
+            running = 0
+
 
 ips=clfdb.keyip_all()
 
@@ -33,7 +38,6 @@ ASHLEY = '10.0.0.54'
 connected = ["10.0.0.1", "10.0.0.9"]
 lock_status = 0
 night_lock = 0
-#current_time = int(strftime("%H", gmtime()))
 #arduino = serial.Serial('/dev/ttyACM0', 9600)
 
 ###############################################################################
@@ -80,14 +84,12 @@ def unlock():
 #
 ###############################################################################
 while 1:
-    #current_time = int(strftime("%H", gmtime()))
     for ip in ips:
 
-        # If the arduino proximity sensor is triggered
-        if (arduino.readline(eol='\r') == '8'):
-            unlock()
-            #sleep
-            lock()
+        #if (arduino.readline(eol='\r') == '8'):
+        #    unlock()
+        #    #sleep
+        #    lock()
 
         ret = subprocess.call("ping -c 1 -w 1 -n %s" % ip,
                 shell=True,
@@ -112,7 +114,7 @@ while 1:
                 lock()
 
     clfdb.printname_ip(connected)
-    print current_time, '[', lock_status,'] %s' % ', '.join(map(str, connected))
+    print '[', lock_status,'] %s' % ', '.join(map(str, connected))
 
 
 # Disconneting from mysql server
