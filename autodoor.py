@@ -16,15 +16,8 @@ import clfdb
 
 def arduino_watcher():
     print 'Arduino watcher has spawned,', os.getpid()
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(23, GPIO.IN, pull_up_down.PUD_DOWN)
-    while (1):
-        if(GPIO.input(23) ==1 and running != 1):
-            print 'Arduino signal recived!'
-            running = 1
-        
-        if(GPIO.input(23) == 0 and running != 0):
-            running = 0
+    while True:
+        print arduino.readline()
 
 
 ips=clfdb.keyip_all()
@@ -32,13 +25,11 @@ ips=clfdb.keyip_all()
 ###############################################################################
 # Setting Global varibles and environment.
 ###############################################################################
-SAM = '10.0.0.111'
-ASHLEY = '10.0.0.54'
 
-connected = ["10.0.0.1", "10.0.0.9"]
+connected = []
 lock_status = 0
 night_lock = 0
-#arduino = serial.Serial('/dev/ttyACM0', 9600)
+arduino = serial.Serial('/dev/ttyUSB0', 9600)
 
 ###############################################################################
 # Sends a lock request to the door to be locked
@@ -52,7 +43,7 @@ night_lock = 0
 def lock():
     global lock_status
     print "\n\n LOCKING -", lock_status, " \n\n"
-    #arduino.write('1')
+    arduino.write('1')
     lock_status = 1
 
 ###############################################################################
@@ -66,7 +57,7 @@ def lock():
 def unlock():
     global lock_status
     print "\n\n UNLOCKING \n\n"
-    #arduino.write('0')
+    arduino.write('0')
     lock_status = 0
 
 ###############################################################################
@@ -83,15 +74,13 @@ def unlock():
 #       automatically unlock the door so exiting does not have to be matic.
 #
 ###############################################################################
+monitor = Thread(target=arduino_watcher)
+monitor.setDaemon(True)
+monitor.start()
 while 1:
     for ip in ips:
 
-        #if (arduino.readline(eol='\r') == '8'):
-        #    unlock()
-        #    #sleep
-        #    lock()
-
-        ret = subprocess.call("ping -c 1 -w 1 -n %s" % ip,
+        ret = subprocess.call("ping -c 1 -w 3 -n %s" % ip,
                 shell=True,
                 stdout=open('/dev/null', 'w'),
                 stderr=subprocess.STDOUT)
@@ -101,10 +90,9 @@ while 1:
                 continue
             else:
                 connected.append(ip)
-                if lock_status == 1:
-                    unlock()
-                    #sleep
-                    lock()
+                unlock()
+                sleep(5)
+                lock()
 
 
         else :

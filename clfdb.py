@@ -84,7 +84,7 @@ def ip2name(ip):
 ###################################################################
 def printname_ip(ips): 
     c=0
-    s="\t\t"
+    s="     "
     for ip in ips:
         c+=1
         sql = "select FirstName as Owner from Addr Left join Persons on Persons.ID=Owner where IPaddr='" + ip + "';"
@@ -93,7 +93,7 @@ def printname_ip(ips):
             nam="%10s" % name[0]
             s += nam + ","
     l="+----------"
-    line="------"
+    line="----"
     for i in range(0,c):
         line += l 
     line += "-+"
