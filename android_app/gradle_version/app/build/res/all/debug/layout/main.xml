@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:gravity="center"
+    android:orientation="vertical" >
+
+    <TextView
+		android:id="@+id/locked_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="State: (locked)" />
+	<TextView
+		android:id="@+id/pin_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pin fail" />
+	<LinearLayout
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:gravity="center"
+		android:orientation="horizontal" >
+	<Button
+		android:background="@color/green"
+		android:id="@+id/button_unlock"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="@string/unlock"
+		android:onClick="unlock"/>
+	<Button
+		android:background="@color/red"
+		android:id="@+id/button_lock"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="@string/lock" 
+		android:onClick="lock" />
+	</LinearLayout>
+
+</LinearLayout>
+<!-- From: file:/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/layout/main.xml -->

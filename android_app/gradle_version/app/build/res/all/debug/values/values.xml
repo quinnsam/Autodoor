@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- From: file:/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/values/color.xml -->
+    <eat-comment />
+
+    <color name="green">#00ff00</color>
+    <color name="red">#ff0000</color>
+    <!-- From: file:/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/values/strings.xml -->
+    <eat-comment />
+
+    <string name="app_name">AutoDoor</string>
+    <string name="hello">Hello World, MainActivity!</string>
+    <string name="lock">Lock</string>
+    <string name="pin">Pin</string>
+    <string name="rusername">Remember Username</string>
+    <string name="send">Send</string>
+    <string name="unlock">Unlock</string>
+    <string name="user">Username</string>
+
+</resources>
