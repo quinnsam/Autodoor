@@ -58,7 +58,7 @@ void loop() {
     //Beginig Serial monitoring
     if (Serial.available() > 0) {
         input = Serial.read();
-        if (input == 49 || input == 48){
+        if (input == '0' || input == '1'){
             if( input == 49) {
                 if (lock(1) != 1) {
                     Serial.println("ERROR: Could not execute command LOCK");
@@ -70,7 +70,10 @@ void loop() {
             }
         } else {
             Serial.print("ERROR: Unreconnized command: ");
-            Serial.println(input, DEC);
+            char out = input;
+            Serial.print("(");
+            Serial.print(out);
+            Serial.print(")");
         }
     }
 
@@ -89,15 +92,15 @@ void loop() {
         } else {
             Serial.println("Object detected");
             digitalWrite(led_pin, HIGH);   // sets the LED on
-            if (lock_status() == 1){
+          
                 if (lock(0) != 0) {
                     Serial.println("ERROR: Could not execute command UNLOCK");
                 }
-            } else if ( lock_status() == 0){
+                delay(1000);
                 if (lock(1) != 1) {
                     Serial.println("ERROR: Could not execute command UNLOCK");
                 }
-            }
+           
             delay(2);
         }
     } else {
@@ -159,9 +162,9 @@ int lock_status() {
 
     print_info();
 
-    if(pot_val > (158 - 5) && pot_val < (158 + 5)){
+    if(pot_val > (168 - 5) && pot_val < (168 + 5)){
         return 1;
-    } else if(pot_val > (360 -5) && pot_val < (360 + 5)) {
+    } else if(pot_val > (365 -5) && pot_val < (365 + 15)) {
         return 0;
     } else {
         return -1;
