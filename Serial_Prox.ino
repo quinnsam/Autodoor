@@ -167,7 +167,7 @@ int lock_status() {
 *
 ******************************************************************************/
 void print_info() {
-    int curr_angle, status; 
+    int cur_angle, status; 
     pot_val = analogRead(pot_pin); // read the value of the potentiometer
     cur_angle = map(pot_val, 0, 1023, 0, 179);
     status = lock_status();
@@ -178,7 +178,7 @@ void print_info() {
     Serial.print("Potent: ");
     Serial.println(pot_val);
     Serial.print("Angle: ");
-    Serial.println(curr_angle);
+    Serial.println(cur_angle);
 }
 
 /******************************************************************************
@@ -203,11 +203,11 @@ int lock(int lock_pos) {
     }
 
     // Read the position of the lock currently
-    status = lock_status();
+    //status = lock_status();
 
     if (status == lock_pos) {
         Serial.println("ALREADY ins desired state.");
-        return 0;
+        //return 0;
     } else {
         print_info();
         if (lock_pos == 1) {
