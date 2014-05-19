@@ -103,10 +103,10 @@ void loop() {
                 if (lock(0) != 0) {
                     Serial.println("ERROR: Could not execute command UNLOCK");
                 }
-                delay(1000);
-                if (lock(1) != 1) {
-                    Serial.println("ERROR: Could not execute command UNLOCK");
-                }
+                //delay(1000);
+                //if (lock(1) != 1) {
+                //    Serial.println("ERROR: Could not execute command UNLOCK");
+                //}
            
             delay(2);
         }
@@ -169,9 +169,9 @@ int lock_status() {
 
     print_info();
 
-    if(pot_val > (168 - 5) && pot_val < (168 + 5)){
+    if(pot_val > (168 - 10) && pot_val < (168 + 10)){
         return 1;
-    } else if(pot_val > (365 -5) && pot_val < (365 + 15)) {
+    } else if(pot_val > (365 -10) && pot_val < (365 + 10)) {
         return 0;
     } else {
         return -1;
@@ -218,8 +218,13 @@ int lock(int lock_pos) {
     int angle;
     if (lock_pos == 1) {
         Serial.println("Now Locking");
-    } else {
+    } else if (lock_pos == 0) {
         Serial.println("Now Unlocking");
+    } else {
+        Serial.print("Now Warings:");
+        Serial.println(lock_pos);
+        Serial.print("Now l_status:");
+        Serial.println(l_status);
     }
 
     // Read the position of the lock currently
@@ -251,5 +256,3 @@ int lock(int lock_pos) {
 
     return lock_status();
 }
-
-
