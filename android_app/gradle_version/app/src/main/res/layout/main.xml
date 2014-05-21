@@ -15,6 +15,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Pin fail" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Echo:Fail"
+        android:id="@+id/echotext"/>
 	<LinearLayout
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
@@ -34,6 +39,15 @@
 		android:layout_height="wrap_content"
 		android:text="@string/lock" 
 		android:onClick="lock" />
-	</LinearLayout>
+    </LinearLayout>
+    <EditText
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/testtext"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/sendbutton"
+        android:text="@string/send"/>
 
 </LinearLayout>
