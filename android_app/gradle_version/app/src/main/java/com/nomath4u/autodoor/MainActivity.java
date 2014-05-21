@@ -2,12 +2,24 @@ package com.nomath4u.autodoor;
 
 import android.app.*;
 import android.os.*;
+import android.util.Log;
 import android.view.*;
 import android.widget.*;
 import android.content.Context;
 import android.content.*;
 import android.view.inputmethod.*;
-
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 public class MainActivity extends Activity
 {
 	boolean locked;
@@ -18,6 +30,10 @@ public class MainActivity extends Activity
 	EditText et1;
 	EditText et2;
 	String pin;
+    private Socket socket;
+    private String mserver = "mobkilla.no-ip.biz";
+    private int port = 5555;
+
 	
     /** Called when the activity is first created. */
     @Override
@@ -56,7 +72,8 @@ public class MainActivity extends Activity
 		TextView pinText = (TextView) findViewById(R.id.pin_text);
 		pinText.setText(pin);
 		pinText.invalidate();
-		
+        MyClientTask task = new MyClientTask(mserver,port, pin);
+        task.execute();
 	}
 	
 	private void getInfo(){
@@ -84,4 +101,61 @@ public class MainActivity extends Activity
 		InputMethodManager input = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 		input.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 	}
+
+
+    public class MyClientTask extends AsyncTask<Void, Void, Void>{
+        String dstAddress;
+        int dstPort;
+        String response = "";
+        String message = "";
+
+        MyClientTask(String addr, int port, String text){
+            dstAddress = addr;
+            dstPort = port;
+            message = text;
+        }
+        @Override
+        protected Void doInBackground(Void... arg0){
+          Socket socket = null;
+
+            try{
+                socket = new Socket (dstAddress, dstPort);
+                ByteArrayOutputStream byteArray = new ByteArrayOutputStream(1024);
+
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                InputStream inputStream = socket.getInputStream();
+                OutputStream outputStream = socket.getOutputStream();
+                PrintStream printStream = new PrintStream(outputStream);
+                printStream.print(message);
+                while ((bytesRead = inputStream.read(buffer)) != -1){
+                    byteArray.write(buffer, 0, bytesRead);
+                    response += byteArray.toString("UTF-8");
+                }
+            } catch (UnknownHostException e ){
+                e.printStackTrace();
+
+            } catch (IOException e){
+                e.printStackTrace();
+            } finally{
+                if(socket != null){
+                    try {
+                        socket.close();
+                    } catch (IOException e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result){
+            Context context = getApplicationContext();
+
+            int duration = Toast.LENGTH_SHORT;
+            Toast toast = Toast.makeText(context, response, duration);
+            toast.show();
+        }
+    }
 }
