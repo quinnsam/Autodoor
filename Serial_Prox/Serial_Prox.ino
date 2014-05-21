@@ -24,14 +24,15 @@ extern void print_info();
 
 
 //Prototypes
-int lock(int);
+//int lock(int);
 
 // Set the sensor address here
 const uint8_t sensorAddr = SENSOR_ADDR_OFF_OFF;
 int led_pin = 13;       // LED connected to digital pin 13
 int servo_pin = 9;      //Digital pin to control the servo
-int const pot_pin = A0; // analog pin used to connect the potentiometer
+int pot_pin = A0; // analog pin used to connect the potentiometer
 int pot_val = -1;            // variable to read the value from the analog pin 
+int pot_lock, pot_unlock;
 int input;
 
 // Servo Object
@@ -51,6 +52,27 @@ void setup()
 
     //Adrress for the proximity sensor 
     WriteByte(sensorAddr, 0x3, 0xFE);
+    
+    //unlock the door to read the potvalue 
+    door.attach(9);
+    door.write(UNLOCK);
+    delay(1000);
+    // read the value of the potentiometer
+    pot_unlock = analogRead(pot_pin); 
+    // print out the value to the serial monitor
+    Serial.print("pot_unlock: ");
+    Serial.println(pot_unlock);
+    
+    //unlock the door to read the potvalue 
+    door.attach(9);
+    door.write(LOCK);
+    delay(1000);
+    // read the value of the potentiometer
+    pot_lock = analogRead(pot_pin); 
+    // print out the value to the serial monitor
+    Serial.print("pot_lock: ");
+    Serial.println(pot_lock);
+    
 }
 
 // Main program loop
@@ -103,10 +125,10 @@ void loop() {
                 if (lock(0) != 0) {
                     Serial.println("ERROR: Could not execute command UNLOCK");
                 }
-                //delay(1000);
-                //if (lock(1) != 1) {
-                //    Serial.println("ERROR: Could not execute command UNLOCK");
-                //}
+                delay(10000);
+                if (lock(1) != 1) {
+                    Serial.println("ERROR: Could not execute command LOCK");
+                }
            
             delay(2);
         }
@@ -169,9 +191,9 @@ int lock_status() {
 
     print_info();
 
-    if(pot_val > (168 - 10) && pot_val < (168 + 10)){
+    if(pot_val > (pot_lock - 20) && pot_val < (pot_lock + 20)){
         return 1;
-    } else if(pot_val > (365 -10) && pot_val < (365 + 10)) {
+    } else if(pot_val > (pot_unlock -20) && pot_val < (pot_unlock + 20)) {
         return 0;
     } else {
         return -1;
