@@ -77,9 +77,10 @@ def unlock():
 monitor = Thread(target=arduino_watcher)
 monitor.setDaemon(True)
 monitor.start()
+
 while 1:
     for ip in ips:
-
+    current_time = int(strftime("%H", gmtime()))
         ret = subprocess.call("ping -c 1 -w 3 -n %s" % ip,
                 shell=True,
                 stdout=open('/dev/null', 'w'),
@@ -89,10 +90,17 @@ while 1:
             if ip in connected:
                 continue
             else:
-                connected.append(ip)
-                unlock()
-                sleep(5)
-                lock()
+                if ip != '10.0.0.72':
+                    connected.append(ip)
+                    unlock()
+                    sleep(10)
+                    lock()
+                elif (current_time < 20 and current_time > 6):
+                    connected.append(ip)
+                    unlock()
+                    sleep(10)
+                    lock()
+
 
 
         else :
