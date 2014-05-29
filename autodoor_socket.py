@@ -8,6 +8,7 @@
 import os
 import socket
 import select
+from xml.dom import minidom
 
 host = ''       # sets the server to use the address of the current machine.
 port = 5555    #My port
@@ -25,8 +26,11 @@ def handshake(client):
     raw = client.recv(size)
     raw = raw.strip()
     #XML parse message
+    xmldoc = minidom.parse(raw)
+    itemlist = xmldoc.getElementsByTagName('message')
     host, port = client.getpeername()
-    client.send('<message type=\"handshake\" from=\"earth\"</message>')
+    if itemlist[0].attributes['type'].value == 'handshake':
+        client.send('<message type=\"handshake\" from=\"earth\"</message>')
 
 
 while True:
@@ -43,10 +47,12 @@ while True:
             for message in data:
                 if message != '':
                     #XML parse message
-
+                    xmldoc = minidom.parse(raw)
+                    itemlist = xmldoc.getElementsByTagName('message')
+                    request = itemlist[0].attributes['type'].value
                     if (request == 'status'):
                         # Call get status from autodoor.py
-
+                        
                     elif (request == 'lock'):
                         # Send lock signal to autodoor.py
                     elif (request == 'unlock'):

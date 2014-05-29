@@ -12,7 +12,7 @@ import subprocess
 import serial
 import os
 import RPi.GPIO as GPIO
-import clfdb
+import cqdb
 
 def arduino_watcher():
     print 'Arduino watcher has spawned,', os.getpid()
@@ -20,7 +20,7 @@ def arduino_watcher():
         print arduino.readline()
 
 
-ips=clfdb.keyip_all()
+ips=cqdb.keyip_all()
 
 ###############################################################################
 # Setting Global varibles and environment.
@@ -80,7 +80,7 @@ monitor.start()
 
 while 1:
     for ip in ips:
-    current_time = int(strftime("%H", gmtime()))
+        current_time = int(strftime("%H", gmtime()))
         ret = subprocess.call("ping -c 1 -w 3 -n %s" % ip,
                 shell=True,
                 stdout=open('/dev/null', 'w'),
@@ -109,10 +109,10 @@ while 1:
             if (len(connected) == 2 and lock_status == 0):
                 lock()
 
-    clfdb.printname_ip(connected)
+    cqdb.printname_ip(connected)
     print '[', lock_status,'] %s' % ', '.join(map(str, connected))
 
 
 # Disconneting from mysql server
-clfdb.db_close()
+cqdb.db_close()
 
