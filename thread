@@ -14,6 +14,9 @@ import RPi.GPIO as GPIO
 import clfdb
 from Queue import Queue
 import signal
+import socket
+import select
+from xml.dom import minidom
 
 ###############################################################################
 # Signal handler 
@@ -34,10 +37,21 @@ night_lock = 0
 arduino = serial.Serial('/dev/ttyUSB0', 9600)
 queue = Queue()
 ips=clfdb.keyip_all()
-
+#------------------------------------------------------------------------------#
 signal.signal(signal.SIGHUP, handler)
 signal.signal(signal.SIGINT, handler)
 signal.signal(signal.SIGQUIT, handler)
+#-----------------------------------------------------------------------------#
+host = ''   # Sets the host to localhost
+port = 5555
+backlog = 5
+size = 1024
+#-----------------------------------------------------------------------------#
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Prevent socket from being left in TIME_WAIT state
+server.bind((host, port))
+server.listen(backlog)
+socket_connected = [server]  # Number of connected sockets
 
 ###############################################################################
 # Sends a lock request to the door to be locked
@@ -67,6 +81,25 @@ def unlock():
     print "\n\n UNLOCKING \n\n"
     arduino.write('0')
     lock_status = 0
+    
+###############################################################################
+# Perfomes the inital handshake between the connected socket and itself
+#
+# Tasks:
+# 1.)   Recieve the xml message from the newly connected client
+# 2.)   Send handshake back to the client
+#
+###############################################################################
+def handshake(client):
+    raw = client.recv(size)
+    raw = raw.strip()
+    #XML parse message
+    xmldoc = minidom.parse(raw)
+    itemlist = xmldoc.getElementsByTagName('message')
+    host, port = client.getpeername()
+    if itemlist[0].attributes['type'].value == 'handshake':
+        client.send('<message type=\"handshake\" from=\"earth\"</message>')
+
 
 ###############################################################################
 # The main while loop that will continualy monitor for clients and manage
@@ -84,6 +117,7 @@ def unlock():
 ###############################################################################
 def pinger(que):
     global connected, ips
+    failed = 0
     ip_mon = que.get()
     if ip_mon == '':
         return 1
@@ -91,7 +125,7 @@ def pinger(que):
     while True:
         current_time = int(strftime("%H", gmtime()))
         #print 'thread' , ip_mon
-        ret = subprocess.call("ping -c 1 -w 3 -n %s" % ip_mon,
+        ret = subprocess.call("ping -c 2 -w 2 -n %s" % ip_mon,
                 shell=True,
                 stdout=open('/dev/null', 'w'),
                 stderr=subprocess.STDOUT)
@@ -121,6 +155,27 @@ def pinger(que):
         clfdb.printname_ip(connected)
         print '[', lock_status,'] %s' % ', '.join(map(str, connected))
 
+###############################################################################
+# Monitors the seiral comunication from the Arduino
+# Tasks:
+# 1.)   Print what is read from the Arduino
+#
+###############################################################################
+def arduino_watcher():
+    print 'Arduino watcher has spawned,', os.getpid()
+    while True:
+        print arduino.readline()
+
+###############################################################################
+# The Main function that spawns all other theads and monitors for socket 
+# connections.
+# Tasks:
+# 1.)   Spawns a thread dedicated to pinging only one ip for each ip in the
+#       ip list.
+# 2.)   Spawns the arduino_monitor thread to monitor serial data
+# 3.)   Begins an infinte loop that will handle socket connections
+#
+###############################################################################
 def main():
     for ip in ips:
         if ip != '':
@@ -130,8 +185,40 @@ def main():
             ip_watcher.setDaemon(True)
             ip_watcher.start()
     
+    arduino_monitor = Thread(target=arduino_watcher)
+    arduino_monitor.setDaemon(True)
+    arduino_monitor.start()
+    
     while True:
-        print arduino.readline()
+        readable, writeable, error = select.select(socket_connected, [], [])
+        for socket in readable:
+            if(socket == server):   # New client connected
+                new_client, address = server.accept()
+                handshake(new_client)
+            else:   # Existing client
+                data = socket.recv(size)
+                data = data.strip()
+                data = data.Split('\n')
+
+                for message in data:
+                    if message != '':
+                        #XML parse message
+                        xmldoc = minidom.parse(raw)
+                        itemlist = xmldoc.getElementsByTagName('message')
+                        request = itemlist[0].attributes['type'].value
+                        if (request == 'status'):
+                            # Call get status from autodoor.py
+                        
+                        elif (request == 'lock'):
+                            # Send lock signal to autodoor.py
+                        elif (request == 'unlock'):
+                            # Send unlock signal to autodoor.py
+                        else:
+                            socket.send('ERROR: unrecognized command', request)
+                    else:   # Client left the session
+                        socket.close()
+                        socket_connected.remove(socket)
+
 
 if __name__ == "__main__":
     main()
