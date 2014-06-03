@@ -18,7 +18,7 @@
 		android:id="@+id/pin"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:inputType="numberPassword"
+        android:inputType="numberPassword"
 		android:hint="@string/pin" />
 	<Button
 		android:id="@+id/button_send_uname"

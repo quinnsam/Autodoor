@@ -10,9 +10,9 @@
                 </string>
                 <string name="rusername" >Remember Username
                 </string>
-                <string name="lock" >Lock
-                </string>
                 <string name="unlock" >Unlock
+                </string>
+                <string name="lock" >Lock
                 </string>
                 <string name="pin" >Pin
                 </string>

@@ -30,6 +30,7 @@ public class MainActivity extends Activity
 	EditText et1;
 	EditText et2;
 	String pin;
+    String uname;
     private Socket socket;
     private String mserver = "mobkilla.no-ip.biz";
     private int port = 5555;
@@ -53,11 +54,18 @@ public class MainActivity extends Activity
 	public void unlock(View view){
 		locked = false;
 		
-		setLockedText();
+		//setLockedText();
+        String message = "<message> <type>unlock</type> <user>" + uname + "</user> </message>";
+        MyClientTask unlocktask = new MyClientTask(mserver, port, message);
+        unlocktask.execute();
+
 	}
 	public void lock(View view){
 		locked = true;
-		setLockedText();
+		//setLockedText();
+        String message = "<message> <type>lock</type> <user>" + uname + "</user> </message>";
+        MyClientTask locktask = new MyClientTask(mserver, port, message);
+        locktask.execute();
 	}
 	public void setLockedText(){
 		lockedText.setText(locked ? R.string.lock : R.string.unlock);
@@ -72,14 +80,18 @@ public class MainActivity extends Activity
 		TextView pinText = (TextView) findViewById(R.id.pin_text);
 		pinText.setText(pin);
 		pinText.invalidate();
-        MyClientTask task = new MyClientTask(mserver,port, pin);
+        MyClientTask task = new MyClientTask(mserver,port, uname, pin);
         task.execute();
+        //MyClientTask task3 = new MyClientTask(mserver,port, "hey");
+        //task3.execute();
+        //MyClientTask task2 = new MyClientTask(mserver,port, "");
+        //task2.execute();
 	}
 	
 	private void getInfo(){
 
 		
-		String uname = et1.getText().toString();
+		uname = et1.getText().toString();
 		SharedPreferences.Editor editor = prefs.edit();
 		if(box.isChecked()){
 			editor.putString("com.nomath4u.autodoor.suname", uname);
@@ -102,12 +114,24 @@ public class MainActivity extends Activity
 		input.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 	}
 
+    public void getStatus(View view){
+        String message = "<message> <type>status</type> <user>" + uname + "</user> </message>";
+        MyClientTask task = new MyClientTask(mserver, port, message);
+        task.execute();
+    }
+
 
     public class MyClientTask extends AsyncTask<Void, Void, Void>{
         String dstAddress;
         int dstPort;
         String response = "";
         String message = "";
+
+        MyClientTask(String addr, int port, String user, String pin){
+            dstAddress = addr;
+            dstPort = port;
+            message = "<message> <type>handshake</type> <user>" + user + "</user> <pin>" + pin + "</pin> </message>";
+        }
 
         MyClientTask(String addr, int port, String text){
             dstAddress = addr;
@@ -116,10 +140,11 @@ public class MainActivity extends Activity
         }
         @Override
         protected Void doInBackground(Void... arg0){
-          Socket socket = null;
+           //socket = null;
 
             try{
-                socket = new Socket (dstAddress, dstPort);
+                if(socket == null)
+                    socket = new Socket (dstAddress, dstPort);
                 ByteArrayOutputStream byteArray = new ByteArrayOutputStream(1024);
 
                 byte[] buffer = new byte[1024];
@@ -128,10 +153,19 @@ public class MainActivity extends Activity
                 OutputStream outputStream = socket.getOutputStream();
                 PrintStream printStream = new PrintStream(outputStream);
                 printStream.print(message);
-                while ((bytesRead = inputStream.read(buffer)) != -1){
+                //while ((bytesRead = inputStream.read(buffer)) != -1) {
+                if((bytesRead = inputStream.read(buffer)) != -1 );
                     byteArray.write(buffer, 0, bytesRead);
-                    response += byteArray.toString("UTF-8");
-                }
+                    if(byteArray.toString("UTF-8") != "") {
+                        response += byteArray.toString("UTF-8");
+                        Log.e("In","in");
+                    }
+                    else{
+                        Log.e("Out","out");
+                        //socket.close();
+                        //MyClientTask task = new MyClientTask(mserver,port, "user5", "7777");
+                    }
+                //}
             } catch (UnknownHostException e ){
                 e.printStackTrace();
 
@@ -139,11 +173,13 @@ public class MainActivity extends Activity
                 e.printStackTrace();
             } finally{
                 if(socket != null){
-                    try {
-                        socket.close();
+                    /*try {
+                        Log.e("Try","try");
+                        //socket.close();
+
                     } catch (IOException e){
                         e.printStackTrace();
-                    }
+                    }*/
                 }
             }
             return null;
@@ -152,7 +188,6 @@ public class MainActivity extends Activity
         @Override
         protected void onPostExecute(Void result){
             Context context = getApplicationContext();
-
             int duration = Toast.LENGTH_SHORT;
             Toast toast = Toast.makeText(context, response, duration);
             toast.show();
