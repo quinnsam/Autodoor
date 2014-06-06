@@ -3,30 +3,35 @@ AutoDoor
 This is the repository for an automatically unlocking door. This allows a door to automatically unlock once a one of the permissioned users get near the door. 
 
 **Raspberry Pi**
-  1. Detects how many users are currently in the house.
-  2. Auto locks the door when no one is in the house.
-  3. Automatically locks the door (if not already) after 20:00
-  4. Allows direct override of locking and unlocking of the door using a command.
-  5. Determines if the door is locked or unlocked.
-  6. Allow permissioned users to be added remotely.
-  7. Relocks the door after 10 minutes of unlocked | OR | When specified users are home alone.
-  8. Lock Down mode, where it returns to matic functionality.
-  9. [POSSIBLE ADDITION] Takes a picture of whoever enters the door matically or automatically. Using one of these http://www.google.com/url?q=http%3A%2F%2Fwww.securitysurveillanceplus.com%2FDoor-Eye-Hole%2F&sa=D&sntz=1&usg=AFQjCNEqIjUrdfbWMzXDiYqKlvx-fe9TNA
-
+  1. Continually checks every device loccated in the authorized client list if the device is connected to the local network or not.
+  2. If a device connects to the network and is not already in the connected list the door will unlock automatically.
+  3. The door will automatically locks once the door is shut after unlocking. If the door had not been opened with in 20 seconds of the unlock it will automattically lock again.
+  4. Allows direct override of locking and unlocking of the door using commands from the Android app.
+  5. Determines if the door is locked or unlocked, and if the door is open or closed.
+  6. Manages all socket connections made by the Android app and verifying users credidentials.
+  7. Will email the list of admins when a user has logged in or failed to log in via the Android app.
+  8. Monitors information recived from the Arduino
+**Android App**
+  1. Requires an authorized username and pin.
+  2. Will remember username but after exiting the app the pin must be entered again.
+  3. Display the current state of the door (Locked, Unlocked, Open, Closed)
+  4. Allow locking and unlocking from anywhere.
 **Arduino**
   1. Initiate servo moter to lock/unlock the door.
-  2. Send a signal to the PI telling if the door is unlocked/locked
+  2. When requested by the PI send a signal to the PI telling if the door is unlocked/locked
+  3. Manage the information from the proximity sensor to automatically unlock the door when leaving from the inside.
 
 **Parts**
   1. Raspberry Pi
-    a. Wireless dongle
+    a. Wireless dongle - Optional
     b. Power cable
-  2. Servo Motor
-    a. Control and Position wires
-    b. Motor control IC
-  3. Arduino
-    a. Raspberry Pi connect
+  2. Arduino
+    a. Usb cable - For power and serial comunication
+    b. Brototyping wires - To connect to the auxilarary components
+  3. Servo motor
+  4. Proximity sensor
+  5. Magnetic door sensor
 
-**Chris’s Thoughts**: I would imagine the way to do communication should be through serial, have the pi run a python script or something that reads and write serial data and arduino can do the same in c. Every # seconds you could send the data back and forth in a string via serial that could easily be parsed in python. Or you could have it only send on input from the PI as well. depending on the state of the arduino is when motors would move. But any information would be
-conveyed back to the pi and then could be displayed perhaps on a website through the pi. In conjunction with a database you could then also have an app for manual control and remote additions to people allowed in.  By requiring a username and password for that kind of connection people could be allowed in without being given access to the entire system as well.
-
+**Installation Proccess**
+=========================
+**Coming Soon**
