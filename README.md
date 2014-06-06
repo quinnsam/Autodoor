@@ -23,11 +23,11 @@ This is the repository for an automatically unlocking door. This allows a door t
 
 **Parts**
   1. Raspberry Pi
-     a. Wireless dongle - Optional
-     b. Power cable
+     1. Wireless dongle - Optional
+     2. Power cable
   2. Arduino
-     a. Usb cable - For power and serial comunication
-     b. Brototyping wires - To connect to the auxilarary components
+     1. Usb cable - For power and serial comunication
+     2. Brototyping wires - To connect to the auxilarary components
   3. Servo motor
   4. Proximity sensor
   5. Magnetic door sensor
