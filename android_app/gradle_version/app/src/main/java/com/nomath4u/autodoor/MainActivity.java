@@ -127,7 +127,15 @@ public class MainActivity extends Activity
         MyClientTask task = new MyClientTask(mserver, port, message);
         task.execute();
     }
-    public void parseStatus(){
+    public void parseStatus(String status){
+        if(status.equals("locked")){
+            locked = true;
+        }
+        else{
+            locked = false;
+        }
+        setLockedText();
+
         Context context = getApplicationContext();
         int duration = Toast.LENGTH_SHORT;
         Toast toast = Toast.makeText(context, "status parsed", duration);
@@ -138,6 +146,13 @@ public class MainActivity extends Activity
         Context context = getApplicationContext();
         int duration = Toast.LENGTH_SHORT;
         Toast toast = Toast.makeText(context, "authenticated", duration);
+        toast.show();
+    }
+
+    public void errorHandler(){
+        Context context = getApplicationContext();
+        int duration = Toast.LENGTH_SHORT;
+        Toast toast = Toast.makeText(context, "error_caught", duration);
         toast.show();
     }
 
@@ -210,6 +225,7 @@ public class MainActivity extends Activity
         protected void onPostExecute(Void result){
             if(response != "") {
                 String xmltype = "";
+                String lockstatus = "";
                 XMLDOMParser parser = new XMLDOMParser();
                 InputStream is = null;
                 try {
@@ -225,15 +241,24 @@ public class MainActivity extends Activity
                     for (int i = 0; i < nodeList.getLength(); i++) {
                         Element e = (Element) nodeList.item(i);
                         xmltype = parser.getValue(e, "type");
+                        lockstatus = parser.getValue(e, "text");
                     }
                 }
                 //xmltype = "test";
 
-                if(xmltype == "handshake"){
+                if(xmltype.equals("handshake")){
                     authenticate();
                 }
-                else if(xmltype == "status"){
-                    parseStatus();
+                else if(xmltype.equals("status")){
+
+                    parseStatus(lockstatus);
+                }
+                else if (xmltype.equals("error")){
+                    //Get text tag info
+                    errorHandler();
+                }
+                else if (xmltype.equals("ack")){
+                    //Move on
                 }
             }
         }
