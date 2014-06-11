@@ -149,11 +149,13 @@ def arduino_watcher():
 	print 'Arduino watcher has spawned,', os.getpid()
 	while True:
 		read = arduino.readline()
-		read.rstrip()
-		print '-', read, '-'
+		read = read.strip()
+		print read
 		if read == 'UNLOCKED':
+			print 'The door is unlocked'
 			lock_status = 0
 		elif read == 'LOCKED':
+			print 'The door is locked'
 			lock_status = 1
 		read = ""
 
@@ -186,15 +188,14 @@ def handshake(client):
 	print 'Request=', request
 	if request== 'handshake':
 		if verify.shake(user, pin) == 0:
-			client.send('<message> <type> handshake </type> <from> earth </from> </message>')
+			client.send('<message> <type>handshake</type> <from>earth</from> </message>')
 			socket_connected.append(client)
 			print 'Connected:',client
-			print 'return'
 			rv = 0
 		else:
-			client.send('<message> failed </message>')
+			client.send('<message> <type>error</type> <text>FAILED to authenticate user</text> </message>')
 			rv = 1
-	verify.mailer(user, rv)
+	#verify.mailer(user, rv)
 	return rv
 
 ###############################################################################
@@ -230,12 +231,14 @@ def main():
 				if hand != 0:
 					print 'Error with handshake:', hand
 			else:   # Existing client
-				data = socket.recv(size)
-				data = data.strip()
-				data = data.split('\n')
-				print 'Recived:', data
-				socket.send('hello')
-
+				try:
+					data = socket.recv(size)
+					data = data.strip()
+					data = data.split('\n')
+					print 'Recived:', data
+					#socket.send('hello')
+				except:
+					pass
 				for message in data:
 					if message != '':
 						##XML parse message
@@ -251,16 +254,18 @@ def main():
 							#    # Call get status from autodoor.py
 							arduino.write('2')
 							sleep(1)
-							if lock_status == 0:
+							if lock_status == 1:
 								socket.send('<message> <type>status</type> <text>locked</text> </message>')    
 							else:
 								socket.send('<message> <type>status</type> <text>unlocked</text> </message>')    
 						elif (request == 'lock'):
 							#    # Send lock signal to autodoor.py
 							arduino.write('1')
+							socket.send('<message> <type>ack</type> <text>locking</text> </message>')    
 						elif (request == 'unlock'):
 							# Send unlock signal to autodoor.py
 							arduino.write('0')
+							socket.send('<message> <type>ack</type> <text>unlocking</text> </message>')    
 						else:
 							socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
 					else:   # Client left the session
