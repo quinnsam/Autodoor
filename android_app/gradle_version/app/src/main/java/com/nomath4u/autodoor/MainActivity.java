@@ -8,6 +8,13 @@ import android.widget.*;
 import android.content.Context;
 import android.content.*;
 import android.view.inputmethod.*;
+
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -15,6 +22,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -119,6 +127,19 @@ public class MainActivity extends Activity
         MyClientTask task = new MyClientTask(mserver, port, message);
         task.execute();
     }
+    public void parseStatus(){
+        Context context = getApplicationContext();
+        int duration = Toast.LENGTH_SHORT;
+        Toast toast = Toast.makeText(context, "status parsed", duration);
+        toast.show();
+    }
+
+    public void authenticate(){
+        Context context = getApplicationContext();
+        int duration = Toast.LENGTH_SHORT;
+        Toast toast = Toast.makeText(context, "authenticated", duration);
+        toast.show();
+    }
 
 
     public class MyClientTask extends AsyncTask<Void, Void, Void>{
@@ -187,10 +208,38 @@ public class MainActivity extends Activity
 
         @Override
         protected void onPostExecute(Void result){
-            Context context = getApplicationContext();
-            int duration = Toast.LENGTH_SHORT;
-            Toast toast = Toast.makeText(context, response, duration);
-            toast.show();
+            if(response != "") {
+                String xmltype = "";
+                XMLDOMParser parser = new XMLDOMParser();
+                InputStream is = null;
+                try {
+                    is = new ByteArrayInputStream(response.getBytes("UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+
+                Document doc = parser.getDocument(is);
+                if (doc != null) {
+                    NodeList nodeList = doc.getElementsByTagName("message");
+
+                    for (int i = 0; i < nodeList.getLength(); i++) {
+                        Element e = (Element) nodeList.item(i);
+                        xmltype = parser.getValue(e, "type");
+                    }
+                }
+                //xmltype = "test";
+
+                if(xmltype == "handshake"){
+                    authenticate();
+                }
+                else if(xmltype == "status"){
+                    parseStatus();
+                }
+            }
         }
     }
 }
+
+
+
+

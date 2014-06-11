@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pre-dex-items>
+
+    <item
+        dex="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/build/intermediates/pre-dexed/debug/support-v4-19.1.0-f67d9e7623b30ce83eff54ca553639131d4b6ba8.jar"
+        jar="/home/chris/ANDROID/android-studio/sdk/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="85f201b380937e61a9dce6ca90ccf6872abbfb67"/>
+
+</pre-dex-items>
