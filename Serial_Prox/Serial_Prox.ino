@@ -33,7 +33,8 @@ int led_pin = 13;       // LED connected to digital pin 13
 int servo_pin = 9;      //Digital pin to control the servo
 int pot_pin = A0; // analog pin used to connect the potentiometer
 int pot_val = -1;            // variable to read the value from the analog pin 
-int pot_lock, pot_unlock;
+int pot_lock = 0;
+int pot_unlock =0;
 int input;
 
 // Servo Object
@@ -172,17 +173,18 @@ void calibrate () {
     //unlock the door to read the potvalue 
     door.attach(9);
     door.write(UNLOCK);
-    delay(1000);
+    delay(1500);
     // read the value of the potentiometer
     pot_unlock = analogRead(pot_pin); 
     // print out the value to the serial monitor
     Serial.print("pot_unlock: ");
     Serial.println(pot_unlock);
+    door.detach();
     
     //lock the door to read the potvalue 
     door.attach(9);
     door.write(LOCK);
-    delay(1000);
+    delay(1500);
     // read the value of the potentiometer
     pot_lock = analogRead(pot_pin); 
     // print out the value to the serial monitor
@@ -207,9 +209,9 @@ int lock_status() {
 
     //print_info();
 
-    if(pot_val > (pot_lock -15) && pot_val < (pot_lock + 15)){
+    if(pot_val > (pot_lock -25) && pot_val < (pot_lock + 25)){
         return 1;
-    } else if(pot_val > (pot_unlock -15) && pot_val < (pot_unlock + 15)) {
+    } else if(pot_val > (pot_unlock -25) && pot_val < (pot_unlock + 25)) {
         return 0;
     } else {
         return -1;
@@ -287,7 +289,7 @@ int lock(int lock_pos) {
     Serial.println("] now.");
     door.attach(9);
     door.write(angle);
-    delay(1000);
+    delay(1500);
 
     // Detach servo so manual override of the door can take place
     door.detach();
