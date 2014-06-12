@@ -13,7 +13,7 @@
 #define SENSOR_ADDR_ON_ON    (0x20)
 
 #define LOCK        40
-#define UNLOCK      150
+#define UNLOCK      140
 
 // Functions declarations
 extern int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data);
@@ -21,6 +21,7 @@ extern void WriteByte(uint8_t addr, uint8_t reg, byte data);
 extern int lock_status();
 extern int lock(int lock_pos);
 extern void print_info();
+extern void calibrate();
 
 
 //Prototypes
@@ -53,30 +54,13 @@ void setup()
     //Adrress for the proximity sensor 
     WriteByte(sensorAddr, 0x3, 0xFE);
     
-    //unlock the door to read the potvalue 
-    door.attach(9);
-    door.write(UNLOCK);
-    delay(1000);
-    // read the value of the potentiometer
-    pot_unlock = analogRead(pot_pin); 
-    // print out the value to the serial monitor
-    Serial.print("pot_unlock: ");
-    Serial.println(pot_unlock);
-    
-    //lock the door to read the potvalue 
-    door.attach(9);
-    door.write(LOCK);
-    delay(1000);
-    // read the value of the potentiometer
-    pot_lock = analogRead(pot_pin); 
-    // print out the value to the serial monitor
-    Serial.print("pot_lock: ");
-    Serial.println(pot_lock);
+    calibrate();
     
 }
 
 // Main program loop
 void loop() {
+  int stat;
     //Beginig Serial monitoring
     if (Serial.available() > 0) {
         input = Serial.read();
@@ -93,7 +77,7 @@ void loop() {
                 stat = lock_status();
                 if (stat == 1) {
                     Serial.println("LOCKED");
-                } elseif (stat == 0){
+                } else if (stat == 0){
                     Serial.println("UNLOCKED");
                 } else {
                     Serial.println("ERROR");
@@ -184,6 +168,29 @@ void WriteByte(uint8_t addr, uint8_t reg, byte data) {
     Wire.endTransmission();
 }
 
+void calibrate () {
+    //unlock the door to read the potvalue 
+    door.attach(9);
+    door.write(UNLOCK);
+    delay(1000);
+    // read the value of the potentiometer
+    pot_unlock = analogRead(pot_pin); 
+    // print out the value to the serial monitor
+    Serial.print("pot_unlock: ");
+    Serial.println(pot_unlock);
+    
+    //lock the door to read the potvalue 
+    door.attach(9);
+    door.write(LOCK);
+    delay(1000);
+    // read the value of the potentiometer
+    pot_lock = analogRead(pot_pin); 
+    // print out the value to the serial monitor
+    Serial.print("pot_lock: ");
+    Serial.println(pot_lock);
+    door.detach();
+  }
+
 /******************************************************************************
 * Determines the current state of the door
 *
@@ -200,9 +207,9 @@ int lock_status() {
 
     //print_info();
 
-    if(pot_val > (pot_lock - 5) && pot_val < (pot_lock + 5)){
+    if(pot_val > (pot_lock -15) && pot_val < (pot_lock + 15)){
         return 1;
-    } else if(pot_val > (pot_unlock -5) && pot_val < (pot_unlock + 5)) {
+    } else if(pot_val > (pot_unlock -15) && pot_val < (pot_unlock + 15)) {
         return 0;
     } else {
         return -1;
