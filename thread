@@ -123,7 +123,7 @@ def pinger(que):
 					unlock()
 					sleep(10)
 					lock()
-				elif (current_time < 20 and current_time > 8):
+				elif (current_time < 20 and current_time > 10):
 					connected.append(ip_mon)
 					unlock()
 					sleep(10)
