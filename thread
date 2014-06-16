@@ -6,7 +6,8 @@
 ###############################################################################
 
 from threading import Thread
-from time import gmtime, strftime, sleep
+from time import sleep
+import datetime
 import subprocess
 import serial
 import os
@@ -106,7 +107,8 @@ def pinger(que):
 		return 1
 	print 'IP watcher started for: ', ip_mon
 	while True:
-		current_time = int(strftime("%H", gmtime()))
+		current_time = datetime.datetime.now() 
+		print 'Time: ', current_time.hour
 		#print 'thread' , ip_mon
 		ret = subprocess.call("ping -c 2 -w 2 -n %s" % ip_mon,
 				shell=True,
@@ -123,7 +125,7 @@ def pinger(que):
 					unlock()
 					sleep(10)
 					lock()
-				elif (current_time < 20 and current_time > 10):
+				elif (current_time.hour < 20 and current_time.hour > 10):
 					connected.append(ip_mon)
 					unlock()
 					sleep(10)
@@ -132,7 +134,7 @@ def pinger(que):
 		else :
 			if ip_mon in connected:
 				failed = failed + 1
-				if failed > 3:
+				if failed > 5:
 					connected.remove(ip_mon)
 
 		#cqdb.printname_ip(connected)

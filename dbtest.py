@@ -1,25 +1,31 @@
 #!/usr/bin/python
 
 import subprocess
-import clfdb
+import cqdb
 
 
-ips=clfdb.ip_all()
+ips=cqdb.ip_all()
 connected = [""]
 for ip in ips:
     connected.append(ip)
-clfdb.printname_ip(connected)
+cqdb.printname_ip(connected)
 
-ips=clfdb.keyip_all()
+ips=cqdb.keyip_all()
 connected = [""]
 for ip in ips:
     connected.append(ip)
-clfdb.printname_ip(connected)
+cqdb.printname_ip(connected)
 
-name=clfdb.ip2name(ips[2])
+name=cqdb.ip2name(ips[3])
+print "iptoname " 
 print name
+print "-------"
 
+pw="iamroot"
+usr="rooiut"
 
-
-clfdb.db_close()
+print cqdb.check_usrpw(usr,pw)
+print cqdb.check_pw(pw)
+print cqdb.check_usr(usr)
+cqdb.db_close()
 
