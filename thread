@@ -51,7 +51,8 @@ backlog = 5
 size = 1024
 #-----------------------------------------------------------------------------#
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Prevent socket from being left in TIME_WAIT state
+# Prevent socket from being left in TIME_WAIT state
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((host, port))
 server.listen(backlog)
 socket_connected = [server]  # Number of connected sockets
@@ -212,17 +213,18 @@ def handshake(client):
 def main():
 	global lock_status
 	for ip in ips:
-	    if ip != '':
-	        queue.put(ip)
-	        print 'IP ADDR', ip
-	        ip_watcher = Thread(target=pinger, args=(queue,))
-	        ip_watcher.setDaemon(True)
-	        ip_watcher.start()
+            if ip != '':
+                queue.put(ip)
+                print 'IP ADDR', ip
+                ip_watcher = Thread(target=pinger, args=(queue,))
+                ip_watcher.setDaemon(True)
+                ip_watcher.start()
 
 	arduino_monitor = Thread(target=arduino_watcher)
 	arduino_monitor.setDaemon(True)
 	arduino_monitor.start()
 
+        # Main process that will handle all socket comunications.
 	while True:
 		readable, writeable, error = select.select(socket_connected, [], [])
 		for socket in readable:
