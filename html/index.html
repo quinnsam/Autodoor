@@ -1,0 +1,23 @@
+<html><body><h1>Unlock the Door</h1>
+		<p>This is the default web page for the front door.</p>
+		<table style="width:700px">
+			<tr>
+				<td>
+					<a href="lock.html"><img style="boarder:0," src="lock.png" alt="Lock" width="180" height="180"/></a>
+				</td>
+				<td>
+					<a href="unlock.html"><img style="boarder:0," src="unlock.jpg" alt="Unlock" width"180" height="180"/></a>
+				</td>
+			</tr>
+			<tr>
+				<form action="/cgi-bin/door.py" method="post">
+					Username: <input type="text" name="username">  <br />
+
+					pin: <input type="text" name="pin" />
+					<input type="submit" value="Submit" />
+				</form>
+			</tr>
+		</table>
+
+
+</body></html>

@@ -109,7 +109,7 @@ def pinger(que):
 	print 'IP watcher started for: ', ip_mon
 	while True:
 		current_time = datetime.datetime.now() 
-		print 'Time: ', current_time.hour
+		#print 'Time: ', current_time.hour
 		#print 'thread' , ip_mon
 		ret = subprocess.call("ping -c 2 -w 2 -n %s" % ip_mon,
 				shell=True,
@@ -126,11 +126,9 @@ def pinger(que):
 					unlock()
 					sleep(10)
 					lock()
-				elif (current_time.hour < 20 and current_time.hour > 10):
-					connected.append(ip_mon)
-					unlock()
+					#unlock()
 					sleep(10)
-					lock()
+					#lock()
 
 		else :
 			if ip_mon in connected:
