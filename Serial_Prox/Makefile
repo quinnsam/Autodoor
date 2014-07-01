@@ -1,5 +1,4 @@
-BOARD_TAG = uno
-ARDUINO_PORT = /dev/ttyACM0
-ARDUINO_LIBS = ~/libraries
-ARDUINO_DIR = /usr/share/arduino
+BOARD_TAG     = uno
+MONITOR_PORT  = /dev/ttyAMC*
+ARDUINO_LIBS = Wire Servo
 include /usr/share/arduino/Arduino.mk

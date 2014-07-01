@@ -26,9 +26,9 @@ import verify
 ###############################################################################
 def handler(signum, frame):
 	print 'Entered Sighandler'
+	lock()
 	# Disconneting from mysql server
 	cqdb.db_close()
-	ip_watcher.exit()
 	sys.exit()
 
 ###############################################################################
@@ -137,7 +137,7 @@ def pinger(que):
 					connected.remove(ip_mon)
 
 		#cqdb.printname_ip(connected)
-		print '[', lock_status,'] %s' % ', '.join(map(str, connected))
+		#print '[', lock_status,'] %s' % ', '.join(map(str, connected))
 
 ###############################################################################
 # Monitors the seiral comunication from the Arduino
@@ -169,14 +169,14 @@ def arduino_watcher():
 #
 ###############################################################################
 def handshake(client):
-	print 'Entered handshakewith:', client
+	print 'Entered handshake with:', client
 	try:
 		raw = client.recv(size)
 		raw = raw.strip()
 	except:
 		return 2 
 
-	print 'Meassageas', raw
+	print 'Recived:', raw
 
 	try:
 		xmldoc = minidom.parseString(raw)
@@ -210,10 +210,15 @@ def handshake(client):
 ###############################################################################
 def main():
 	global lock_status
+
+	# Calibrate the Arduino
+	arduino.write('3')
+
 	for ip in ips:
             if ip != '':
+				connected.append(ip)
                 queue.put(ip)
-                print 'IP ADDR', ip
+				print 'IP:', ip
                 ip_watcher = Thread(target=pinger, args=(queue,))
                 ip_watcher.setDaemon(True)
                 ip_watcher.start()
@@ -226,7 +231,6 @@ def main():
 	while True:
 		readable, writeable, error = select.select(socket_connected, [], [])
 		for socket in readable:
-			print 'loop'
 			if(socket == server):   # New client connected
 				new_client, address = server.accept()
 				hand = handshake(new_client)
@@ -243,15 +247,14 @@ def main():
 					pass
 				for message in data:
 					if message != '':
-						##XML parse message
-						print 'Meassageas3', message 
+						# XML parse message
 						try:
 							xmldoc = minidom.parseString(message)
 						except:
 							socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
 						request = xmldoc.getElementsByTagName('type')[0].firstChild.data
 						user = xmldoc.getElementsByTagName('user')[0].firstChild.data
-						print 'User, type', user, request
+						print 'User:', user, 'type', request
 						if (request == 'status'):
 							#    # Call get status from autodoor.py
 							arduino.write('2')
