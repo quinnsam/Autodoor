@@ -123,18 +123,18 @@ def pinger(que):
 			else:
 				if ip_mon != '10.0.0.72':
 					connected.append(ip_mon)
+					print cqdb.ip2name(ip_mon), ' Has connected'
 					unlock()
 					sleep(10)
 					lock()
-					#unlock()
 					sleep(10)
-					#lock()
 
 		else :
 			if ip_mon in connected:
 				failed = failed + 1
 				if failed > 5:
 					connected.remove(ip_mon)
+					print cqdb.ip2name(ip_mon), ' Disconnected'
 
 		#cqdb.printname_ip(connected)
 		#print '[', lock_status,'] %s' % ', '.join(map(str, connected))
@@ -215,19 +215,19 @@ def main():
 	arduino.write('3')
 
 	for ip in ips:
-            if ip != '':
-				connected.append(ip)
-                queue.put(ip)
-				print 'IP:', ip
-                ip_watcher = Thread(target=pinger, args=(queue,))
-                ip_watcher.setDaemon(True)
-                ip_watcher.start()
+		if ip != '':
+			connected.append("%s" % ip)
+			queue.put(ip)
+			print 'IP:', ip
+			ip_watcher = Thread(target=pinger, args=(queue,))
+			ip_watcher.setDaemon(True)
+			ip_watcher.start()
 
 	arduino_monitor = Thread(target=arduino_watcher)
 	arduino_monitor.setDaemon(True)
 	arduino_monitor.start()
 
-        # Main process that will handle all socket comunications.
+		# Main process that will handle all socket comunications.
 	while True:
 		readable, writeable, error = select.select(socket_connected, [], [])
 		for socket in readable:
