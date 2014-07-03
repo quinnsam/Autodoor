@@ -19,7 +19,7 @@ import socket
 import select
 from xml.dom import minidom
 import verify 
-
+import sys
 
 ###############################################################################
 # Signal handler 
@@ -147,7 +147,7 @@ def pinger(que):
 ###############################################################################
 def arduino_watcher():
 	global lock_status
-	print 'Arduino watcher has spawned,', os.getpid()
+	print 'Arduino watcher has spawned'
 	while True:
 		read = arduino.readline()
 		read = read.strip()
@@ -160,6 +160,15 @@ def arduino_watcher():
 			lock_status = 1
 		read = ""
 
+def console_watcher():
+	print 'Console monitor has spawned'
+	while True:
+		console = raw_input()
+		console.strip()
+		if console == '0' or console == '1' or console == '2' or console == '3':
+			arduino.write(console)
+		else:
+			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate]', console
 ###############################################################################
 # Perfomes the inital handshake between the connected socket and itself
 #
@@ -226,6 +235,10 @@ def main():
 	arduino_monitor = Thread(target=arduino_watcher)
 	arduino_monitor.setDaemon(True)
 	arduino_monitor.start()
+
+	console_monitor = Thread(target=console_watcher)
+	console_monitor.setDaemon(True)
+	console_monitor.start()
 
 		# Main process that will handle all socket comunications.
 	while True:

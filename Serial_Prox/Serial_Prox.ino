@@ -179,7 +179,7 @@ void calibrate () {
     // read the value of the potentiometer
     pot_unlock = analogRead(pot_pin); 
     // print out the value to the serial monitor
-    Serial.print("pot_unlock: ");
+    Serial.print("Defined unlock: ");
     Serial.println(pot_unlock);
     door.detach();
     
@@ -190,7 +190,7 @@ void calibrate () {
     // read the value of the potentiometer
     pot_lock = analogRead(pot_pin); 
     // print out the value to the serial monitor
-    Serial.print("pot_lock: ");
+    Serial.print("Defined lock: ");
     Serial.println(pot_lock);
     door.detach();
   }
@@ -286,9 +286,9 @@ int lock(int lock_pos) {
 
 
     // set the servo position  
-    Serial.print("Moving Servo to [");
-    Serial.print(angle);
-    Serial.println("] now.");
+    //Serial.print("Moving Servo to [");
+    //Serial.print(angle);
+    //Serial.println("] now.");
     door.attach(9);
     door.write(angle);
     delay(1500);
