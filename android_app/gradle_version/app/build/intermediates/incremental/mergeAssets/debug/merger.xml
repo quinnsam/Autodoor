@@ -2,10 +2,10 @@
 <merger version="2" >
 
     <dataSet config="main" >
-        <source path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/assets" />
+        <source path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/assets" />
     </dataSet>
     <dataSet config="debug" >
-        <source path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/debug/assets" />
+        <source path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/debug/assets" />
     </dataSet>
 
 </merger>

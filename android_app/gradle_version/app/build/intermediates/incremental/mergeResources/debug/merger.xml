@@ -2,71 +2,71 @@
 <merger version="2" >
 
     <dataSet config="main" >
-        <source path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res" >
+        <source path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/res" >
             <file
-                path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/values/strings.xml"
+                name="main"
+                path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/res/layout/main.xml"
+                qualifiers=""
+                type="layout" />
+            <file
+                name="lock"
+                path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/res/layout/lock.xml"
+                qualifiers=""
+                type="layout" />
+            <file
+                name="ic_launcher"
+                path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/res/drawable-xhdpi/ic_launcher.png"
+                qualifiers="xhdpi-v4"
+                type="drawable" />
+            <file
+                name="ic_launcher"
+                path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/res/drawable-xxhdpi/ic_launcher.png"
+                qualifiers="xxhdpi-v4"
+                type="drawable" />
+            <file
+                name="ic_launcher"
+                path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/res/drawable-mdpi/ic_launcher.png"
+                qualifiers="mdpi-v4"
+                type="drawable" />
+            <file
+                name="ic_launcher"
+                path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/res/drawable-hdpi/ic_launcher.png"
+                qualifiers="hdpi-v4"
+                type="drawable" />
+            <file
+                path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/res/values/strings.xml"
                 qualifiers="" >
-                <string name="send" >Send
+                <string name="hello" >Hello World, MainActivity!
                 </string>
                 <string name="rusername" >Remember Username
                 </string>
-                <string name="lock" >Lock
-                </string>
-                <string name="unlock" >Unlock
-                </string>
-                <string name="pin" >Pin
+                <string name="send" >Send
                 </string>
                 <string name="app_name" >AutoDoor
                 </string>
-                <string name="user" >Username
+                <string name="lock" >Lock
                 </string>
-                <string name="hello" >Hello World, MainActivity!
+                <string name="pin" >Pin
+                </string>
+                <string name="unlock" >Unlock
+                </string>
+                <string name="user" >Username
                 </string>
             </file>
             <file
-                path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/values/color.xml"
+                path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/main/res/values/color.xml"
                 qualifiers="" >
                 <color name="green" >#00ff00
                 </color>
                 <color name="red" >#ff0000
                 </color>
             </file>
-            <file
-                name="ic_launcher"
-                path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/drawable-mdpi/ic_launcher.png"
-                qualifiers="mdpi-v4"
-                type="drawable" />
-            <file
-                name="ic_launcher"
-                path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/drawable-hdpi/ic_launcher.png"
-                qualifiers="hdpi-v4"
-                type="drawable" />
-            <file
-                name="lock"
-                path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/layout/lock.xml"
-                qualifiers=""
-                type="layout" />
-            <file
-                name="main"
-                path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/layout/main.xml"
-                qualifiers=""
-                type="layout" />
-            <file
-                name="ic_launcher"
-                path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/drawable-xxhdpi/ic_launcher.png"
-                qualifiers="xxhdpi-v4"
-                type="drawable" />
-            <file
-                name="ic_launcher"
-                path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/main/res/drawable-xhdpi/ic_launcher.png"
-                qualifiers="xhdpi-v4"
-                type="drawable" />
         </source>
-        <source path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/build/generated/res/rs/debug" />
-        <source path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/build/generated/res/generated/debug" />
+        <source path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/build/generated/res/rs/debug" />
+        <source path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/build/generated/res/generated/debug" />
     </dataSet>
     <dataSet config="debug" >
-        <source path="/home/chris/AndroidStudioProjects/autodoor/Autodoor/android_app/gradle_version/app/src/debug/res" />
+        <source path="/home/chris/Android/Projects/Autodoor/android_app/gradle_version/app/src/debug/res" />
     </dataSet>
 
 </merger>
