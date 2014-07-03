@@ -65,7 +65,7 @@ void loop() {
     //Beginig Serial monitoring
     if (Serial.available() > 0) {
         input = Serial.read();
-        if (input == '0' || input == '1' || input == '2'){
+        if (input == '0' || input == '1' || input == '2' || input == '3'){
             if( input == '1') {
                 if (lock(1) != 1) {
                     Serial.println("ERROR: Could not execute command LOCK");
@@ -74,7 +74,7 @@ void loop() {
                 if (lock(0) != 0) {
                     Serial.println("ERROR: Could not execute command UNLOCK");
                 }
-            } else {
+            } else if ( input == '2' ){
                 stat = lock_status();
                 if (stat == 1) {
                     Serial.println("LOCKED");
@@ -83,7 +83,9 @@ void loop() {
                 } else {
                     Serial.println("ERROR");
                 }
-            }
+            } else {
+				calibrate();
+			}
         } else {
             Serial.print("ERROR: Unreconnized command: ");
             char out = input;
@@ -177,7 +179,7 @@ void calibrate () {
     // read the value of the potentiometer
     pot_unlock = analogRead(pot_pin); 
     // print out the value to the serial monitor
-    Serial.print("pot_unlock: ");
+    Serial.print("Defined unlock: ");
     Serial.println(pot_unlock);
     door.detach();
     
@@ -188,7 +190,7 @@ void calibrate () {
     // read the value of the potentiometer
     pot_lock = analogRead(pot_pin); 
     // print out the value to the serial monitor
-    Serial.print("pot_lock: ");
+    Serial.print("Defined lock: ");
     Serial.println(pot_lock);
     door.detach();
   }
@@ -284,9 +286,9 @@ int lock(int lock_pos) {
 
 
     // set the servo position  
-    Serial.print("Moving Servo to [");
-    Serial.print(angle);
-    Serial.println("] now.");
+    //Serial.print("Moving Servo to [");
+    //Serial.print(angle);
+    //Serial.println("] now.");
     door.attach(9);
     door.write(angle);
     delay(1500);
@@ -296,3 +298,4 @@ int lock(int lock_pos) {
 
     return lock_status();
 }
+

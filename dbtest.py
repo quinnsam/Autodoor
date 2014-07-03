@@ -22,7 +22,7 @@ print name
 print "-------"
 
 pw="iamroot"
-usr="rooiut"
+usr="roo"
 
 print cqdb.check_usrpw(usr,pw)
 print cqdb.check_pw(pw)

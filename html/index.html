@@ -2,19 +2,19 @@
 		<p>This is the default web page for the front door.</p>
 		<table style="width:700px">
 			<tr>
-				<td>
-					<a href="lock.html"><img style="boarder:0," src="lock.png" alt="Lock" width="180" height="180"/></a>
-				</td>
-				<td>
-					<a href="unlock.html"><img style="boarder:0," src="unlock.jpg" alt="Unlock" width"180" height="180"/></a>
-				</td>
-			</tr>
-			<tr>
 				<form action="/cgi-bin/door.py" method="post">
 					Username: <input type="text" name="username">  <br />
 
-					pin: <input type="text" name="pin" />
-					<input type="submit" value="Submit" />
+					Password: <input type="password" name="pin" />
+				</tr>
+				<tr>
+					<td>
+						<input name="request"  type="image" src="unlock.jpg" alt="Unlock" value="unlock" width="180" height="180"/>
+					</td>
+					<td>
+						<input name="request" type="image" src="lock.png" alt="Lock" value="lock" width="180" height="180"/>
+					</td>
+
 				</form>
 			</tr>
 		</table>

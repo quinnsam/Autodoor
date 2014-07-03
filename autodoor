@@ -19,16 +19,16 @@ import socket
 import select
 from xml.dom import minidom
 import verify 
-
+import sys
 
 ###############################################################################
 # Signal handler 
 ###############################################################################
 def handler(signum, frame):
 	print 'Entered Sighandler'
+	lock()
 	# Disconneting from mysql server
 	cqdb.db_close()
-	ip_watcher.exit()
 	sys.exit()
 
 ###############################################################################
@@ -123,21 +123,21 @@ def pinger(que):
 			else:
 				if ip_mon != '10.0.0.72':
 					connected.append(ip_mon)
+					print cqdb.ip2name(ip_mon), ' Has connected'
 					unlock()
 					sleep(10)
 					lock()
-					#unlock()
 					sleep(10)
-					#lock()
 
 		else :
 			if ip_mon in connected:
 				failed = failed + 1
 				if failed > 5:
 					connected.remove(ip_mon)
+					print cqdb.ip2name(ip_mon), ' Disconnected'
 
 		#cqdb.printname_ip(connected)
-		print '[', lock_status,'] %s' % ', '.join(map(str, connected))
+		#print '[', lock_status,'] %s' % ', '.join(map(str, connected))
 
 ###############################################################################
 # Monitors the seiral comunication from the Arduino
@@ -147,7 +147,7 @@ def pinger(que):
 ###############################################################################
 def arduino_watcher():
 	global lock_status
-	print 'Arduino watcher has spawned,', os.getpid()
+	print 'Arduino watcher has spawned'
 	while True:
 		read = arduino.readline()
 		read = read.strip()
@@ -160,6 +160,15 @@ def arduino_watcher():
 			lock_status = 1
 		read = ""
 
+def console_watcher():
+	print 'Console monitor has spawned'
+	while True:
+		console = raw_input()
+		console.strip()
+		if console == '0' or console == '1' or console == '2' or console == '3':
+			arduino.write(console)
+		else:
+			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate]', console
 ###############################################################################
 # Perfomes the inital handshake between the connected socket and itself
 #
@@ -169,14 +178,14 @@ def arduino_watcher():
 #
 ###############################################################################
 def handshake(client):
-	print 'Entered handshakewith:', client
+	print 'Entered handshake with:', client
 	try:
 		raw = client.recv(size)
 		raw = raw.strip()
 	except:
 		return 2 
 
-	print 'Meassageas', raw
+	print 'Recived:', raw
 
 	try:
 		xmldoc = minidom.parseString(raw)
@@ -210,23 +219,31 @@ def handshake(client):
 ###############################################################################
 def main():
 	global lock_status
+
+	# Calibrate the Arduino
+	arduino.write('3')
+
 	for ip in ips:
-            if ip != '':
-                queue.put(ip)
-                print 'IP ADDR', ip
-                ip_watcher = Thread(target=pinger, args=(queue,))
-                ip_watcher.setDaemon(True)
-                ip_watcher.start()
+		if ip != '':
+			connected.append("%s" % ip)
+			queue.put(ip)
+			print 'IP:', ip
+			ip_watcher = Thread(target=pinger, args=(queue,))
+			ip_watcher.setDaemon(True)
+			ip_watcher.start()
 
 	arduino_monitor = Thread(target=arduino_watcher)
 	arduino_monitor.setDaemon(True)
 	arduino_monitor.start()
 
-        # Main process that will handle all socket comunications.
+	console_monitor = Thread(target=console_watcher)
+	console_monitor.setDaemon(True)
+	console_monitor.start()
+
+		# Main process that will handle all socket comunications.
 	while True:
 		readable, writeable, error = select.select(socket_connected, [], [])
 		for socket in readable:
-			print 'loop'
 			if(socket == server):   # New client connected
 				new_client, address = server.accept()
 				hand = handshake(new_client)
@@ -243,15 +260,14 @@ def main():
 					pass
 				for message in data:
 					if message != '':
-						##XML parse message
-						print 'Meassageas3', message 
+						# XML parse message
 						try:
 							xmldoc = minidom.parseString(message)
 						except:
 							socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
 						request = xmldoc.getElementsByTagName('type')[0].firstChild.data
 						user = xmldoc.getElementsByTagName('user')[0].firstChild.data
-						print 'User, type', user, request
+						print 'User:', user, 'type', request
 						if (request == 'status'):
 							#    # Call get status from autodoor.py
 							arduino.write('2')
