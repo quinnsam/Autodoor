@@ -123,9 +123,9 @@ def pinger(que):
 			else:
 				if ip_mon != '10.0.0.72':
 					connected.append(ip_mon)
-					print cqdb.ip2name(ip_mon), ' Has connected'
+					print cqdb.ip2name(ip_mon), ' Has connected:', datetime.datetime.now() 
 					unlock()
-					sleep(10)
+					sleep(60)
 					lock()
 					sleep(10)
 
@@ -134,7 +134,7 @@ def pinger(que):
 				failed = failed + 1
 				if failed > 5:
 					connected.remove(ip_mon)
-					print cqdb.ip2name(ip_mon), ' Disconnected'
+					print cqdb.ip2name(ip_mon), ' Disconnected:', datetime.datetime.now() 
 
 		#cqdb.printname_ip(connected)
 		#print '[', lock_status,'] %s' % ', '.join(map(str, connected))
@@ -167,6 +167,10 @@ def console_watcher():
 		console.strip()
 		if console == '0' or console == '1' or console == '2' or console == '3':
 			arduino.write(console)
+		elif console == '4':
+			#print connected
+			for user in connected:
+				print cqdb.ip2name(user)
 		else:
 			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate]', console
 ###############################################################################
@@ -208,6 +212,12 @@ def handshake(client):
 	#verify.mailer(user, rv)
 	return rv
 
+def calibrate():
+	print 'Calibrator spawned'
+	sleep(20)
+	arduino.write('3')
+	print 'Calibrator terminated'
+
 ###############################################################################
 # The Main function that spawns all other theads and monitors for socket 
 # connections.
@@ -221,7 +231,9 @@ def main():
 	global lock_status
 
 	# Calibrate the Arduino
-	arduino.write('3')
+	cali = Thread(target=calibrate)
+	cali.setDaemon(True)
+	cali.start()
 
 	for ip in ips:
 		if ip != '':
@@ -283,7 +295,12 @@ def main():
 						elif (request == 'unlock'):
 							# Send unlock signal to autodoor.py
 							arduino.write('0')
-							socket.send('<message> <type>ack</type> <text>unlocking</text> </message>')    
+							socket.send('<message> <type>ack</type> <text>unlocking</text> </message>')
+						elif (request == 'Calibrate'):
+							# Send Calibrate signal to the arduino
+							arduino.write('3')
+							socket.send('<message> <type>ack</type> <text>calibrating</text> </message>')
+
 						else:
 							socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
 					else:   # Client left the session
