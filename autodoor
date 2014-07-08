@@ -172,7 +172,7 @@ def console_watcher():
 			for user in connected:
 				print cqdb.ip2name(user)
 		else:
-			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate]', console
+			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate, 4-Connected.Clients]', console
 ###############################################################################
 # Perfomes the inital handshake between the connected socket and itself
 #

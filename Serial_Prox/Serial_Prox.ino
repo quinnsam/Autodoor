@@ -112,11 +112,9 @@ void loop() {
            LO = object detected, HI = nothing detected */
         if (val & 0x2) {
             //Serial.println("Nothing detected");
-            digitalWrite(led_pin, LOW);    // sets the LED off
             delay(2);
         } else {
             Serial.println("Object detected");
-            digitalWrite(led_pin, HIGH);   // sets the LED on
           
                 if (lock(0) != 0) {
                     Serial.println("ERROR: Could not execute command UNLOCK");
@@ -292,6 +290,11 @@ int lock(int lock_pos) {
     door.attach(9);
     door.write(angle);
     delay(1500);
+    if (angle == UNLOCK) {
+        digitalWrite(led_pin, HIGH);   // sets the LED on
+    } else {
+        digitalWrite(led_pin, LOW);    // sets the LED off
+    }
 
     // Detach servo so manual override of the door can take place
     door.detach();
