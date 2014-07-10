@@ -37,6 +37,8 @@ int pot_lock = 0;
 int pot_unlock =0;
 int input;
 
+//global counter
+int gc = 0;
 // Servo Object
 Servo door;
 
@@ -129,6 +131,24 @@ void loop() {
     } else {
         Serial.println("Failed to read from sensor");
     }
+
+	// check if the door is unlocked. 
+	// lock it after about 20 (40*0.5) seconds 
+	// if no more interaction detected.
+	if (lock_status() != 1){
+		if ( gc == 0 ){
+			Serial.println("Door is unlocked, it will be locked in 20s if no interaction.");
+			gc = 1;
+		} else if ( gc == 30 ){
+			Serial.println("Lock the door in 5s.");
+			gc = 31;
+		} else if ( gc == 40 ){
+			lock(1);
+			gc = 0;
+		} else {
+			gc++;
+		}
+	}
 
     // Run again in 0.5 s (500 ms)
     delay(500);
@@ -241,7 +261,7 @@ void print_info() {
 }
 
 /******************************************************************************
-* Will either lock or unlock the door 
+* Will either lock (1) or unlock (0) the door 
 * 
 * Tasks:
 * 1.)   Attach to the Servo motor
