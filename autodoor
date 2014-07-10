@@ -124,6 +124,7 @@ def pinger(que):
 				if ip_mon != '':
 					connected.append(ip_mon)
 					print cqdb.ip2name(ip_mon), ' Has connected:', datetime.datetime.now() 
+					verify.mailer(cqdb.ip2name(ip_mon), 2)
 					unlock()
 					sleep(60)
 					lock()
@@ -133,11 +134,10 @@ def pinger(que):
 			if ip_mon in connected:
 				failed = failed + 1
 				if failed > 5:
+					verify.mailer(cqdb.ip2name(ip_mon), 3)
 					connected.remove(ip_mon)
 					print cqdb.ip2name(ip_mon), ' Disconnected:', datetime.datetime.now() 
 
-		#cqdb.printname_ip(connected)
-		#print '[', lock_status,'] %s' % ', '.join(map(str, connected))
 
 ###############################################################################
 # Monitors the seiral comunication from the Arduino
@@ -212,6 +212,14 @@ def handshake(client):
 	#verify.mailer(user, rv)
 	return rv
 
+################################################################################
+# Calibrates the Arduino board for accurate potentiometer values.
+#
+# Tasks:
+# 1.)	Wait 20 seconds
+# 2.)	Send calibrate signla to the Arudino
+#
+################################################################################
 def calibrate():
 	print 'Calibrator spawned'
 	sleep(20)
@@ -230,6 +238,12 @@ def calibrate():
 def main():
 	global lock_status
 
+	pid_file = open('/home/pi/Autodoor/run/autodoor.pid', 'w')
+	pid = os.getpid()
+	print 'PID: ', pid
+	pid_file.write("%s" % pid)
+	pid_file.close()
+	
 	# Calibrate the Arduino
 	cali = Thread(target=calibrate)
 	cali.setDaemon(True)

@@ -1,21 +1,26 @@
 #!/bin/bash
-
+echo "################################################################################"
+date
 # Check if connected to the internet
 ping -c 2 -w 2 google.com
-if [ $? == 1 ]
-then
-    reboot
-fi
+#if [ $? == 1 ]
+#then
+    #reboot
+#fi
 
 # Check if autodoor is running or not
-if [ -f /var/run/autodoor.pid ]
+if [ -f /home/pi/Autodoor/run/autodoor.pid ]
 then
-    ps -p `cat /var/run/autodoor.pid`
+    ps -p `cat /home/pi/Autodoor/run/autodoor.pid`
     if [ $? == 1 ]
     then
-        /home/pi/Autodoor/autodoor
+		tmux kill-session -t 0 
+        tmux new -d /home/pi/Autodoor/autodoor
+	else
+		echo "Autodoor is already running"
     fi
 else
-    /home/pi/Autodoor/autodoor
+	tmux kill-session -t 0
+    tmux new -d /home/pi/Autodoor/autodoor
 fi
 
