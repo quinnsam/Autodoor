@@ -1,12 +1,11 @@
 #!/bin/bash
-
-echo "##############################**Net-Checker**#############################"
-date
-
 # Check if connected to the internet
-ping -c 2 -w 2 google.com
+ping -c 2 -w 2 google.com > /dev/null 2>&1 
 if [ $? == 1 ]
 then
+	echo "##############################**Net-Checker**#############################"
+	date
+	echo "Not connected to the Interwebs, Rebooting"
     reboot
 fi
 
