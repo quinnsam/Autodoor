@@ -103,7 +103,7 @@ def printname_ip(ips):
 
 
 ###################################################################
-#  checking 
+#  username and password checking 
 ###################################################################
 def check_usrpw(usr,pw):
     sql = "select ID from User where Password=SHA2('" + pw + "',256) and Username='" + usr + "';"
@@ -126,12 +126,32 @@ def check_usr(usr):
 ###################################################################
 # password checking 
 ###################################################################
-def check_pw(pw):
-    sql = "select ID from User where Password=SHA2('" + pw + "',256);"
+def check_pw(table,pw):
+    sql = "select ID from " + table + " where Password=SHA2('" + pw + "',256);"
     if ( fetch_fcol(sql) == [] ):
         return 0;
     else:
         return 1;
+
+###################################################################
+# Email and password checking 
+###################################################################
+def check_empw(email,pw):
+    sql = "select ID from Email where Email='" + email + "';"
+    if ( fetch_fcol(sql) == [] ):
+        return 0;
+    else:
+		if ( check_pw("Email",pw) == 1 ):
+			return 1;
+		return 0;
+
+###################################################################
+# Email password return
+###################################################################
+def return_empw(email):
+    sql = "select Password from Email where Email='" + email + "';"
+    return fetch_fcol(sql)[0];
+
 ###################################################################
 # Disconnect form sercer
 ###################################################################

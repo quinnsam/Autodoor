@@ -21,11 +21,16 @@ print "iptoname "
 print name
 print "-------"
 
-pw="iamroot"
-usr="roo"
-
+pw="oot"
+usr="ot"
+email="chaunceyyann@gmail.com"
+email2="comprepair3@gmail.com"
+epw=""
 print cqdb.check_usrpw(usr,pw)
-print cqdb.check_pw(pw)
+print cqdb.check_pw("User",pw)
 print cqdb.check_usr(usr)
+print cqdb.check_empw(email,epw)
+print cqdb.return_empw(email)
+print cqdb.return_empw(email2)
 cqdb.db_close()
 
