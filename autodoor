@@ -121,7 +121,7 @@ def pinger(que):
 				failed = 0
 				continue
 			else:
-				if ip_mon != '10.0.0.72':
+				if ip_mon != '':
 					connected.append(ip_mon)
 					print cqdb.ip2name(ip_mon), ' Has connected:', datetime.datetime.now() 
 					unlock()
