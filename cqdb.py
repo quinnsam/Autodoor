@@ -114,7 +114,7 @@ def check_usrpw(usr,pw):
         return 1;
 
 ###################################################################
-# user checking
+# username checking
 ###################################################################
 def check_usr(usr):
     sql = "select ID from User where Username='" + usr + "';"
