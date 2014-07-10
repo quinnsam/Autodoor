@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Check if connected to the internet
+ping -c 2 -w 2 google.com
+if [ $? == 1 ]
+then
+    reboot
+fi
+
+# Check if autodoor is running or not
+if [ -f /var/run/autodoor.pid ]
+then
+    ps -p `cat /var/run/autodoor.pid`
+    if [ $? == 1 ]
+    then
+        /home/pi/Autodoor/autodoor
+    fi
+else
+    /home/pi/Autodoor/autodoor
+fi
+
