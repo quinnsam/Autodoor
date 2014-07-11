@@ -32,8 +32,8 @@ extern int door_position();
 const uint8_t sensorAddr = SENSOR_ADDR_OFF_OFF;
 int led_pin = 13;       // LED connected to digital pin 13
 int servo_pin = 9;      //Digital pin to control the servo
-int pot_pin = A0; // analog pin used to connect the potentiometer
-int pot_val = -1;            // variable to read the value from the analog pin 
+int pot_pin = A0; 		// analog pin used to connect the potentiometer
+int pot_val = -1;       // variable to read the value from the analog pin 
 int pot_lock = 0;
 int pot_unlock =0;
 int input;
@@ -149,7 +149,7 @@ void loop() {
         } else if ( gc == 30 ){
             Serial.println("Lock the door in 5s.");
             gc = 31;
-        } else if ( gc == 40 ){
+        } else if ( gc <= 40 ){
             lock(1);
             gc = 0;
         } else {

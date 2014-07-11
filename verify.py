@@ -45,9 +45,7 @@ def mailer(user, status):
 	s.starttls()
 	s.ehlo()
 	s.login(sender, cqdb.return_empw(sender))
-	s.sendmail(sender, ['quinnsam1@gmail.com'], msg.as_string())
-	msg['To'] = 'chaunceyyann@gmail.com'
-	s.sendmail(sender, ['chaunceyyann@gmail.com'], msg.as_string())
+	s.sendmail(sender, ['quinnsam1@gmail.com', 'chaunceyyann@gmail.com'], msg.as_string())
 	s.quit()
 	print 'Email Sent'
 

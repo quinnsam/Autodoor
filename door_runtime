@@ -9,14 +9,14 @@ then
 		echo "############################**Run-Time**##################################"
 		date
 		echo "Autodoor is not running starting it now."
-		tmux kill-session -t 0 
+		tmux kill-session -t 0 > /dev/null 2>&1
         tmux new -d /home/pi/Autodoor/autodoor
     fi
 else
 	echo "############################**Run-Time**##################################"
 	date
 	echo "Autodoor is not running starting it now."
-	tmux kill-session -t 0
+	tmux kill-session -t 0 > /dev/null 2>&1
     tmux new -d /home/pi/Autodoor/autodoor
 fi
 

@@ -136,6 +136,12 @@ def pinger(que):
 	ip_mon = que.get()
 	if ip_mon == '':
 		return 1
+
+	if ip_mon == '10.0.0.72':
+		failed_max = 300
+	else:
+		failed_max = 5
+
 	print 'IP watcher started for: ', ip_mon
 	while True:
 		current_time = datetime.datetime.now() 
@@ -150,22 +156,21 @@ def pinger(que):
 			if ip_mon in connected:
 				failed = 0
 				continue
-			else:
-				if ip_mon != '':
-					connected.append(ip_mon)
-					print cqdb.ip2name(ip_mon), ' Has connected:', datetime.datetime.now() 
-					if not test_mode:
-						verify.mailer(cqdb.ip2name(ip_mon), 2)
-					unlock()
-					sleep(60)
-					lock()
-					sleep(10)
+			elif current_time.hour > 5 and current_time.hour < 23:
+				connected.append(ip_mon)
+				print cqdb.ip2name(ip_mon), ' Has connected:', datetime.datetime.now() 
+				if test_mode:
+					verify.mailer(cqdb.ip2name(ip_mon), 2)
+				unlock()
+				sleep(60)
+				lock()
+				sleep(10)
 
 		else :
 			if ip_mon in connected:
 				failed = failed + 1
-				if failed > 5:
-					if not test_mode:
+				if failed > failed_max:
+					if test_mode:
 						verify.mailer(cqdb.ip2name(ip_mon), 3)
 					connected.remove(ip_mon)
 					print cqdb.ip2name(ip_mon), ' Disconnected:', datetime.datetime.now() 
@@ -296,6 +301,7 @@ def main():
 			ip_watcher = Thread(target=pinger, args=(queue,))
 			ip_watcher.setDaemon(True)
 			ip_watcher.start()
+			sleep(1)
 
 	arduino_monitor = Thread(target=arduino_watcher)
 	arduino_monitor.setDaemon(True)
