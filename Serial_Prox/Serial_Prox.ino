@@ -1,8 +1,8 @@
 /******************************************************************************
-* This program automates a door for keyless unlocking                         *
-* Developed by: Sam Quinn, Chauncey Yan, Ashley Greenacre, and Chris Harper.  *
-* 05/13/2014                                                                  *
-******************************************************************************/
+ * This program automates a door for keyless unlocking                         *
+ * Developed by: Sam Quinn, Chauncey Yan, Ashley Greenacre, and Chris Harper.  *
+ * 05/13/2014                                                                  *
+ ******************************************************************************/
 #include <Wire.h>
 #include <Servo.h>
 
@@ -22,6 +22,7 @@ extern int lock_status();
 extern int lock(int lock_pos);
 extern void print_info();
 extern void calibrate();
+extern int door_position();
 
 
 //Prototypes
@@ -36,9 +37,12 @@ int pot_val = -1;            // variable to read the value from the analog pin
 int pot_lock = 0;
 int pot_unlock =0;
 int input;
+int door_pin = 2;
 
 //global counter
 int gc = 0;
+int door_sensor = -1;
+
 // Servo Object
 Servo door;
 
@@ -51,19 +55,22 @@ void setup()
     // Pin to connet to the pi
     pinMode(led_pin, OUTPUT);      // sets the digital pin as output
 
+    // Set door sensor as an input
+    pinMode(door_pin, INPUT);
+
     // Join the I2C bus as master
     Wire.begin();
 
     //Adrress for the proximity sensor 
     WriteByte(sensorAddr, 0x3, 0xFE);
-    
+
     calibrate();
-    
+
 }
 
 // Main program loop
 void loop() {
-  int stat;
+    int stat;
     //Beginig Serial monitoring
     if (Serial.available() > 0) {
         input = Serial.read();
@@ -86,8 +93,8 @@ void loop() {
                     Serial.println("ERROR");
                 }
             } else {
-				calibrate();
-			}
+                calibrate();
+            }
         } else {
             Serial.print("ERROR: Unreconnized command: ");
             char out = input;
@@ -117,38 +124,41 @@ void loop() {
             delay(2);
         } else {
             Serial.println("Object detected");
-          
-                if (lock(0) != 0) {
-                    Serial.println("ERROR: Could not execute command UNLOCK");
-                }
-                delay(10000);
-                if (lock(1) != 1) {
-                    Serial.println("ERROR: Could not execute command LOCK");
-                }
-           
+
+            if (lock(0) != 0) {
+                Serial.println("ERROR: Could not execute command UNLOCK");
+            }
+            delay(10000);
+            if (lock(1) != 1) {
+                Serial.println("ERROR: Could not execute command LOCK");
+            }
+
             delay(2);
         }
     } else {
         Serial.println("Failed to read from sensor");
     }
 
-	// check if the door is unlocked. 
-	// lock it after about 20 (40*0.5) seconds 
-	// if no more interaction detected.
-	if (lock_status() != 1){
-		if ( gc == 0 ){
-			Serial.println("Door is unlocked, it will be locked in 20s if no interaction.");
-			gc = 1;
-		} else if ( gc == 30 ){
-			Serial.println("Lock the door in 5s.");
-			gc = 31;
-		} else if ( gc == 40 ){
-			lock(1);
-			gc = 0;
-		} else {
-			gc++;
-		}
-	}
+    // check if the door is unlocked. 
+    // lock it after about 20 (40*0.5) seconds 
+    // if no more interaction detected.
+    if (lock_status() != 1){
+        if ( gc == 0 ){
+            Serial.println("Door is unlocked, it will be locked in 20s if no interaction.");
+            gc = 1;
+        } else if ( gc == 30 ){
+            Serial.println("Lock the door in 5s.");
+            gc = 31;
+        } else if ( gc == 40 ){
+            lock(1);
+            gc = 0;
+        } else {
+            gc++;
+        }
+    }
+
+    // Check wheater the door is open or closed using the Magetic door sensor.
+    door_position();
 
     // Run again in 0.5 s (500 ms)
     delay(500);
@@ -173,6 +183,13 @@ int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data)
 
     return 0;
 }
+
+// Returns the position of the door.
+int door_position() {
+    return digitalRead(door_pin);
+}
+
+
 
 // Write a byte on the i2c interface
 void WriteByte(uint8_t addr, uint8_t reg, byte data) {
@@ -200,7 +217,7 @@ void calibrate () {
     Serial.print("Defined unlock: ");
     Serial.println(pot_unlock);
     door.detach();
-    
+
     //lock the door to read the potvalue 
     door.attach(9);
     door.write(LOCK);
@@ -211,19 +228,19 @@ void calibrate () {
     Serial.print("Defined lock: ");
     Serial.println(pot_lock);
     door.detach();
-  }
+}
 
 /******************************************************************************
-* Determines the current state of the door
-*
-* Tasks:
-* 1.)   Read analog data from the servos internal potentiometer
-* 2.)   Map the potentiometer data to an angle
-* 3.)   If angle is close to the defined LOCK value return 1
-* 4.)   If angle is close to the defined UNLOCK value return 0
-* 5.)   If the lock is in an indeterminate state then return -1
-*
-******************************************************************************/
+ * Determines the current state of the door
+ *
+ * Tasks:
+ * 1.)   Read analog data from the servos internal potentiometer
+ * 2.)   Map the potentiometer data to an angle
+ * 3.)   If angle is close to the defined LOCK value return 1
+ * 4.)   If angle is close to the defined UNLOCK value return 0
+ * 5.)   If the lock is in an indeterminate state then return -1
+ *
+ ******************************************************************************/
 int lock_status() {
     pot_val = analogRead(pot_pin); // read the value of the potentiometer
 
@@ -240,15 +257,15 @@ int lock_status() {
 }
 
 /******************************************************************************
-* Print the current state of the servo motor
-*
-* Tasks:
-* 1.)   Read analog input from the potentiometer of the servo
-* 2.)   Map the potentiometer data to angles
-* 3.)   Check current lock status
-* 4.)   Print all data out through serial
-*
-******************************************************************************/
+ * Print the current state of the servo motor
+ *
+ * Tasks:
+ * 1.)   Read analog input from the potentiometer of the servo
+ * 2.)   Map the potentiometer data to angles
+ * 3.)   Check current lock status
+ * 4.)   Print all data out through serial
+ *
+ ******************************************************************************/
 void print_info() {
 
     pot_val = analogRead(pot_pin); // read the value of the potentiometer
@@ -257,25 +274,26 @@ void print_info() {
 
     Serial.print("Potent: ");
     Serial.println(pot_val);
- 
+
 }
 
 /******************************************************************************
-* Will either lock (1) or unlock (0) the door 
-* 
-* Tasks:
-* 1.)   Attach to the Servo motor
-* 2.)   Read the curent position of the lock
-* 3.)   If the door is already in its desired location do nothing
-* 4.)   If the door is not in the desired location then set the servo angle
-* 5.)   Move the servo to the desired location
-* 6.)   Detach the servo to allow manual locking and unlocking.
-*
-******************************************************************************/
+ * Will either lock (1) or unlock (0) the door 
+ * 
+ * Tasks:
+ * 1.)   Attach to the Servo motor
+ * 2.)   Read the curent position of the lock
+ * 3.)   If the door is already in its desired location do nothing
+ * 4.)   If the door is not in the desired location then set the servo angle
+ * 5.)   Move the servo to the desired location
+ * 6.)   Detach the servo to allow manual locking and unlocking.
+ *
+ ******************************************************************************/
 int lock(int lock_pos) {
-    
+
     int l_status = lock_status();
     int angle;
+    int door_open = 1;
     if (lock_pos == 1) {
         Serial.println("Now Locking");
     } else if (lock_pos == 0) {
@@ -288,7 +306,6 @@ int lock(int lock_pos) {
     }
 
     // Read the position of the lock currently
-    //status = lock_status();
 
     if (l_status == lock_pos) {
         Serial.println("ALREADY ins desired state.");
@@ -304,12 +321,23 @@ int lock(int lock_pos) {
 
 
     // set the servo position  
-    //Serial.print("Moving Servo to [");
-    //Serial.print(angle);
-    //Serial.println("] now.");
-    door.attach(9);
-    door.write(angle);
+    if (angle == LOCK) {
+        while (door_open == 1) {
+            if (door_position() == 1) {
+                delay(500);
+                door.attach(9);
+                door.write(LOCK);
+                door_open = 0;
+            } else {
+                continue;
+            }
+        }
+    } else {
+        door.attach(9);
+        door.write(UNLOCK);
+    }
     delay(1500);
+    
     if (angle == UNLOCK) {
         digitalWrite(led_pin, HIGH);   // sets the LED on
     } else {
