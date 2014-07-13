@@ -137,7 +137,7 @@ def pinger(que):
 	if ip_mon == '':
 		return 1
 
-	if ip_mon == '10.0.0.72':
+	if ip_mon == '10.0.0.72' or ip_mon == '10.0.0.54':
 		failed_max = 300
 	else:
 		failed_max = 5
