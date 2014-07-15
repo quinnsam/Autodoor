@@ -1,18 +1,24 @@
 #!/bin/bash
 
+# Location of the autodoor program
+AUTO='/home/pi/Autodoor/autodoor'
+
+# Location of the run/pid folder
+RUN='/home/pi/Autodoor/run'
+
 # Kills any tmux 0 session and starts teh Autodoor program in tmux 0
 start_auto() {
 	echo "############################**Run-Time**##################################"
 	date
 	echo "Autodoor is not running starting it now."
 	tmux kill-session -t 0 > /dev/null 2>&1
-    tmux new -d /home/pi/Autodoor/autodoor
+    tmux new -d $AUTO
 }
 
 # Check if autodoor is running or not
-if [ -f /home/pi/Autodoor/run/autodoor.pid ]
+if [ -f "$RUN/autodoor.pid" ]
 then
-    ps -p `cat /home/pi/Autodoor/run/autodoor.pid` > /dev/null 2>&1
+    ps -p `cat "$RUN"/autodoor.pid` > /dev/null 2>&1
     if [ $? == 1 ]
     then
 		start_auto

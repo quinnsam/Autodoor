@@ -1,0 +1,30 @@
+#!/bin/bash
+
+INSTALL_DIR='/home/pi/Autodoor'
+LOG_DIR='/home/pi/Autodoor/log'
+RUN_DIR='/home/pi/Autodoor/run'
+USERNAME='pi'
+
+if [ ! -d "$LOG_DIR" ]
+then
+	echo "Creating log directory"
+	mkdir -p "$LOG_DIR"
+	chown -R "$USERNAME":"$USERNAME" "$LOG_DIR"
+else
+	echo "log directory already exists"
+fi
+
+if [ ! -d "$RUN_DIR" ]
+then
+	echo "Creating run directory"
+	mkdir -p "$RUN_DIR"
+	chown -R "$USERNAME":"$USERNAME" "$RUN_DIR"
+else
+	echo "Run directory already exists"
+fi
+
+
+echo "*/2 * * * *	$USERNAME	$INSTALL_DIR/door_runtime >> $LOG_DIR/autodoor.log 2>&1" >> /etc/crontab
+
+echo "*/5 * * * *	root	$INSTALL_DIR/net_checker >> $LOG_DIR/autodoor.log 2>&1" >> /etc/crontab
+
