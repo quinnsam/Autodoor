@@ -32,6 +32,9 @@ def handler(signum, frame):
 	cqdb.db_close()
 	sys.exit()
 
+###############################################################################
+# Usage 
+###############################################################################
 def usage():
 	print "Autodoor"
 
@@ -64,6 +67,9 @@ socket_connected = [server]  # Number of connected sockets
 test_mode = False
 #-----------------------------------------------------------------------------#
 
+################################################################################
+# Pareses and sets varibles from commandline arguments.
+################################################################################
 try:
 	opts, args = getopt.getopt(sys.argv[1:], "ht", ["help"])
 except getopt.GetoptError as err:
@@ -85,9 +91,7 @@ for o, a in opts:
 # Sends a lock request to the door to be locked
 #
 # Tasks:
-# 1.)   Checks the current stored lock position.
-# 2.)   Sends a singnal to the arduino to lock the door.
-# 3.)   Only locks the door if the door is closed using the magnetic sensor.
+# 1.)   Sends a singnal to the arduino to lock the door.
 #
 ###############################################################################
 def lock():
@@ -103,8 +107,7 @@ def lock():
 # Sends a unlock request to the door to be unlocked
 #
 # Tasks:
-# 1.)   Checks the current stored lock position.
-# 2.)   Sends a singnal to the arduino to unlock the door.
+# 1.)   Sends a singnal to the arduino to unlock the door.
 #
 ###############################################################################
 def unlock():
@@ -117,17 +120,15 @@ def unlock():
 	#lock_status = 0
 
 ###############################################################################
-# The main while loop that will continualy monitor for clients and manage
-# housekeeping process.
+# This is the main while loop that will continualy monitor for clients connecting
+# and disconnecting.
 #
 # Tasks:
-# 1.)   Ping the client list to see which devices are alive or dead.
-# 2.)   If a devices is alive and have not been added to the cliet list yet
+# 1.)   Ping the client to see if the device is alive or dead.
+# 2.)   If a device is alive and has not been added to the client list yet
 #       it will unlock the door.
-# 3.)   If the alive device is already been established then no action is taken.
-# 4.)   After 30 seconds of the door being unlocked it will automatically lock.
-# 5.)   When a user is leaving the house the proxsimity sensor will trigger and
-#       automatically unlock the door so exiting does not have to be matic.
+# 3.)   If the alive device has already been established then no action is taken.
+# 4.)   After 60 seconds of the door being unlocked it will automatically lock.
 #
 ###############################################################################
 def pinger(que):
@@ -197,6 +198,13 @@ def arduino_watcher():
 			lock_status = 1
 		read = ""
 
+###############################################################################
+# Monitors the seiral comunication from the console. 
+# Tasks:
+# 1.)   Read input from the daemon console screen.
+# 2.)	If command is valid send command to the Arduino.
+#
+###############################################################################
 def console_watcher():
 	print 'Console monitor has spawned'
 	while True:
@@ -213,6 +221,7 @@ def console_watcher():
 				print cqdb.ip2name(user)
 		else:
 			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate, 4-Connected.Clients]', console
+
 ###############################################################################
 # Perfomes the inital handshake between the connected socket and itself
 #
@@ -222,14 +231,14 @@ def console_watcher():
 #
 ###############################################################################
 def handshake(client):
-	print 'Entered handshake with:', client
+	#print 'Entered handshake with:', client
 	try:
 		raw = client.recv(size)
 		raw = raw.strip()
 	except:
 		return 2 
 
-	print 'Recived:', raw
+	#print 'Recived:', raw
 
 	try:
 		xmldoc = minidom.parseString(raw)
@@ -239,12 +248,12 @@ def handshake(client):
 	user = xmldoc.getElementsByTagName('user')[0].firstChild.data
 	pin = xmldoc.getElementsByTagName('pin')[0].firstChild.data
 	host, port = client.getpeername()
-	print 'Request=', request
+	#print 'Request=', request
 	if request== 'handshake':
 		if verify.shake(user, pin) == 0:
 			client.send('<message> <type>handshake</type> <from>earth</from> </message>')
 			socket_connected.append(client)
-			print 'Connected:',client
+			print 'Connected:', client
 			rv = 0
 		else:
 			client.send('<message> <type>error</type> <text>FAILED to authenticate user</text> </message>')
@@ -257,7 +266,7 @@ def handshake(client):
 #
 # Tasks:
 # 1.)	Wait 20 seconds
-# 2.)	Send calibrate signla to the Arudino
+# 2.)	Send calibrate signal to the Arudino
 #
 ################################################################################
 def calibrate():
@@ -274,14 +283,17 @@ def calibrate():
 # The Main function that spawns all other theads and monitors for socket 
 # connections.
 # Tasks:
-# 1.)   Spawns a thread dedicated to pinging only one ip for each ip in the
-#       ip lcqdb# 2.)   Spawns the arduino_monitor thread to monitor serial data
+# 1.)   Create a PID file for the keep alive crontab.
+# 2.)	Spawns a thread dedicated to pinging only one ip for each ip in the
+#       ip cqdb, calibrator, Arduino monitor, and the console monitor.
+# 2.)   Spawns the arduino_monitor thread to monitor serial data
 # 3.)   Begins an infinte loop that will handle socket connections
 #
 ###############################################################################
 def main():
 	global lock_status
 
+	# Create a PID file for the keep alive crontab
 	pid_file = open('/home/pi/Autodoor/run/autodoor.pid', 'w')
 	pid = os.getpid()
 	print 'PID: ', pid
@@ -292,7 +304,8 @@ def main():
 	cali = Thread(target=calibrate)
 	cali.setDaemon(True)
 	cali.start()
-
+	
+	# Spawn a dedicated thread for each IP in the database.
 	for ip in ips:
 		if ip != '':
 			connected.append("%s" % ip)
@@ -302,16 +315,18 @@ def main():
 			ip_watcher.setDaemon(True)
 			ip_watcher.start()
 			sleep(1)
-
+	
+	# Spawn Arduino serial monitor
 	arduino_monitor = Thread(target=arduino_watcher)
 	arduino_monitor.setDaemon(True)
 	arduino_monitor.start()
 
+	# Spawn console monitor
 	console_monitor = Thread(target=console_watcher)
 	console_monitor.setDaemon(True)
 	console_monitor.start()
 
-		# Main process that will handle all socket comunications.
+	# Main process that will handle all socket comunications.
 	while True:
 		readable, writeable, error = select.select(socket_connected, [], [])
 		for socket in readable:
@@ -344,7 +359,7 @@ def main():
 							if not test_mode:
 								arduino.write('2')
 							else:
-								print 'TEST: Sent Arduino 2'
+								print 'TEST: Sent Arduino "2" (Get Status)'
 							sleep(1)
 							if lock_status == 1:
 								socket.send('<message> <type>status</type> <text>locked</text> </message>')    
@@ -355,22 +370,30 @@ def main():
 							if not test_mode:
 								arduino.write('1')
 							else:
-								print 'TEST: Sent Arduino 1'
+								print 'TEST: Sent Arduino "1" (Lock)'
 							socket.send('<message> <type>ack</type> <text>locking</text> </message>')    
 						elif (request == 'unlock'):
 							# Send unlock signal to autodoor.py
 							if not test_mode:
 								arduino.write('0')
 							else:
-								print 'TEST: Sent Arduino 0'
+								print 'TEST: Sent Arduino "0" (Unlock)'
 							socket.send('<message> <type>ack</type> <text>unlocking</text> </message>')
 						elif (request == 'Calibrate'):
 							# Send Calibrate signal to the arduino
 							if not test_mode:
 								arduino.write('3')
 							else:
-								print 'TEST: Sent Arduino 3'
+								print 'TEST: Sent Arduino "3" (Calibrate)'
 							socket.send('<message> <type>ack</type> <text>calibrating</text> </message>')
+						
+						elif (request == 'Clients'):
+							# Send Get Clients to the arduino
+							if not test_mode:
+								arduino.write('4')
+							else:
+								print 'TEST: Sent Arduino "4" (Get Clients)'
+							socket.send('<message> <type>ack</type> <text>Reciving Clients</text> </message>')
 
 						else:
 							socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')

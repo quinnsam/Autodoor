@@ -61,9 +61,10 @@ void setup()
     // Join the I2C bus as master
     Wire.begin();
 
-    //Adrress for the proximity sensor 
+    // Adrress for the proximity sensor 
     WriteByte(sensorAddr, 0x3, 0xFE);
 
+	// Calibrates the definitions of the potentiometer values
     calibrate();
 
 }
@@ -71,6 +72,7 @@ void setup()
 // Main program loop
 void loop() {
     int stat;
+
     //Beginig Serial monitoring
     if (Serial.available() > 0) {
         input = Serial.read();
@@ -165,8 +167,7 @@ void loop() {
 }
 
 // Read a byte on the i2c interface
-int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data)
-{
+int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data) {
     // Do an i2c write to set the register that we want to read from
     Wire.beginTransmission(addr);
     Wire.write(reg);
@@ -246,9 +247,9 @@ int lock_status() {
 
     //print_info();
 
-    if(pot_val > (pot_lock -25) && pot_val < (pot_lock + 25)){
+    if(pot_val > (pot_lock -15) && pot_val < (pot_lock + 15)){
         return 1;
-    } else if(pot_val > (pot_unlock -25) && pot_val < (pot_unlock + 25)) {
+    } else if(pot_val > (pot_unlock -15) && pot_val < (pot_unlock + 15)) {
         return 0;
     } else {
         return -1;
@@ -299,14 +300,11 @@ int lock(int lock_pos) {
     } else if (lock_pos == 0) {
         Serial.println("Now Unlocking");
     } else {
-        Serial.print("Now Warings:");
+        Serial.print("Unreconized command for lock():");
         Serial.println(lock_pos);
-        Serial.print("Now l_status:");
-        Serial.println(l_status);
     }
 
     // Read the position of the lock currently
-
     if (l_status == lock_pos) {
         Serial.println("ALREADY ins desired state.");
         return lock_pos;
@@ -322,7 +320,8 @@ int lock(int lock_pos) {
 
     // set the servo position  
     if (angle == LOCK) {
-        while (door_open == 1) {
+        // Waits till the door is closed before locking.
+		while (door_open == 1) {
             if (door_position() == 1) {
                 delay(500);
                 door.attach(9);
@@ -332,12 +331,14 @@ int lock(int lock_pos) {
                 continue;
             }
         }
+	// No need to wait for the door to close to unlock
     } else {
         door.attach(9);
         door.write(UNLOCK);
     }
     delay(1500);
     
+	// Turns on the door led light when the door is unlocked
     if (angle == UNLOCK) {
         digitalWrite(led_pin, HIGH);   // sets the LED on
     } else {
