@@ -12,8 +12,17 @@
 #define SENSOR_ADDR_ON_OFF   (0x24)
 #define SENSOR_ADDR_ON_ON    (0x20)
 
+// Lock angle definitions
 #define LOCK        40
 #define UNLOCK      140
+
+// Time Definitions
+#define PRX_WAIT 	10000		// Time to wait before locking after proximity trigger
+#define SYS_WAIT	2			// Short pasue to allow system to catch up	
+#define RUN_WAIT	500			// Time to wait before starting loop again
+#define CAL_WAIT	1500		// Time to wait for the calibrator
+#define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
+#define AFT_WAIT	1500		// Time to wait to allow door to complete its task
 
 // Functions declarations
 extern int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data);
@@ -123,19 +132,19 @@ void loop() {
            LO = object detected, HI = nothing detected */
         if (val & 0x2) {
             //Serial.println("Nothing detected");
-            delay(2);
+            delay(SYS_WAIT);
         } else {
             Serial.println("Object detected");
 
             if (lock(0) != 0) {
                 Serial.println("ERROR: Could not execute command UNLOCK");
             }
-            delay(10000);
+            delay(PRX_WAIT);
             if (lock(1) != 1) {
                 Serial.println("ERROR: Could not execute command LOCK");
             }
 
-            delay(2);
+            delay(SYS_WAIT);
         }
     } else {
         Serial.println("Failed to read from sensor");
@@ -146,12 +155,12 @@ void loop() {
     // if no more interaction detected.
     if (lock_status() != 1){
         if ( gc == 0 ){
-            Serial.println("Door is unlocked, it will be locked in 20s if no interaction.");
+            //Serial.println("Door is unlocked, it will be locked in 20s if no interaction.");
             gc = 1;
-        } else if ( gc == 30 ){
-            Serial.println("Lock the door in 5s.");
+        } else if ( gc == 60 ){
+            //Serial.println("Lock the door in 30s.");
             gc = 31;
-        } else if ( gc <= 40 ){
+        } else if ( gc >= 120 ){
             lock(1);
             gc = 0;
         } else {
@@ -163,7 +172,7 @@ void loop() {
     door_position();
 
     // Run again in 0.5 s (500 ms)
-    delay(500);
+    delay(RUN_WAIT);
 }
 
 // Read a byte on the i2c interface
@@ -211,7 +220,7 @@ void calibrate () {
     //unlock the door to read the potvalue 
     door.attach(9);
     door.write(UNLOCK);
-    delay(1500);
+    delay(CAL_WAIT);
     // read the value of the potentiometer
     pot_unlock = analogRead(pot_pin); 
     // print out the value to the serial monitor
@@ -222,7 +231,7 @@ void calibrate () {
     //lock the door to read the potvalue 
     door.attach(9);
     door.write(LOCK);
-    delay(1500);
+    delay(CAL_WAIT);
     // read the value of the potentiometer
     pot_lock = analogRead(pot_pin); 
     // print out the value to the serial monitor
@@ -323,7 +332,7 @@ int lock(int lock_pos) {
         // Waits till the door is closed before locking.
 		while (door_open == 1) {
             if (door_position() == 1) {
-                delay(500);
+                delay(DSR_WAIT);
                 door.attach(9);
                 door.write(LOCK);
                 door_open = 0;
@@ -336,15 +345,13 @@ int lock(int lock_pos) {
         door.attach(9);
         door.write(UNLOCK);
     }
-    delay(1500);
-    
 	// Turns on the door led light when the door is unlocked
     if (angle == UNLOCK) {
         digitalWrite(led_pin, HIGH);   // sets the LED on
     } else {
         digitalWrite(led_pin, LOW);    // sets the LED off
     }
-
+	delay(AFT_WAIT);
     // Detach servo so manual override of the door can take place
     door.detach();
 

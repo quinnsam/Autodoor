@@ -36,7 +36,9 @@ def handler(signum, frame):
 # Usage 
 ###############################################################################
 def usage():
-	print "Autodoor"
+	print "Autodoor [th][help]"
+	print '		-t 			Test mode will not actually comunicate with the door.'
+	print '		-h, --help	Print the usage message'
 
 ###############################################################################
 # Setting Global varibles and environment.
@@ -67,9 +69,9 @@ socket_connected = [server]  # Number of connected sockets
 test_mode = False
 #-----------------------------------------------------------------------------#
 
-################################################################################
+###############################################################################
 # Pareses and sets varibles from commandline arguments.
-################################################################################
+###############################################################################
 try:
 	opts, args = getopt.getopt(sys.argv[1:], "ht", ["help"])
 except getopt.GetoptError as err:
@@ -135,10 +137,15 @@ def pinger(que):
 	global connected, ips
 	failed = 0
 	ip_mon = que.get()
+	try:
+		name = cqdb.ip2name(ip_mon)
+	except:
+		name = 'UNKNOWN'
+	
 	if ip_mon == '':
 		return 1
 
-	if ip_mon == '10.0.0.72' or ip_mon == '10.0.0.54':
+	if ip_mon == '10.0.0.72': # or ip_mon == '10.0.0.54':
 		failed_max = 300
 	else:
 		failed_max = 5
@@ -159,9 +166,9 @@ def pinger(que):
 				continue
 			elif current_time.hour > 5 and current_time.hour < 23:
 				connected.append(ip_mon)
-				print cqdb.ip2name(ip_mon), ' Has connected:', datetime.datetime.now() 
+				print name, ' Has connected:', datetime.datetime.now() 
 				if test_mode:
-					verify.mailer(cqdb.ip2name(ip_mon), 2)
+					verify.mailer(name, 2)
 				unlock()
 				sleep(60)
 				lock()
@@ -172,9 +179,9 @@ def pinger(que):
 				failed = failed + 1
 				if failed > failed_max:
 					if test_mode:
-						verify.mailer(cqdb.ip2name(ip_mon), 3)
+						verify.mailer(name, 3)
 					connected.remove(ip_mon)
-					print cqdb.ip2name(ip_mon), ' Disconnected:', datetime.datetime.now() 
+					print name, ' Disconnected:', datetime.datetime.now() 
 
 
 ###############################################################################
@@ -218,7 +225,10 @@ def console_watcher():
 		elif console == '4':
 			#print connected
 			for user in connected:
-				print cqdb.ip2name(user)
+				try:
+					print cqdb.ip2name(user)
+				except:
+					print 'UNKNOWN', user
 		else:
 			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate, 4-Connected.Clients]', console
 
