@@ -247,18 +247,28 @@ void calibrate () {
  *
  ******************************************************************************/
 int lock_status() {
-    pot_val = analogRead(pot_pin); // read the value of the potentiometer
+    int rv = -1;
+	pot_val = analogRead(pot_pin); // read the value of the potentiometer
 
     //print_info();
 
     if(pot_val > (pot_lock -15) && pot_val < (pot_lock + 15)){
-        return 1;
+		
+        rv = 1;
     } else if(pot_val > (pot_unlock -15) && pot_val < (pot_unlock + 15)) {
-        return 0;
+        rv = 0;
     } else {
-        return -1;
+        rv = -1;
+    }
+	
+	// Turns on the door led light when the door is unlocked
+    if (rv == 0) {
+        digitalWrite(led_pin, HIGH);   // sets the LED on
+    } else {
+        digitalWrite(led_pin, LOW);    // sets the LED off
     }
 
+	return rv;
 }
 
 /******************************************************************************
@@ -339,12 +349,6 @@ int lock(int lock_pos) {
     } else {
         door.attach(9);
         door.write(UNLOCK);
-    }
-	// Turns on the door led light when the door is unlocked
-    if (angle == UNLOCK) {
-        digitalWrite(led_pin, HIGH);   // sets the LED on
-    } else {
-        digitalWrite(led_pin, LOW);    // sets the LED off
     }
 	delay(AFT_WAIT);
     // Detach servo so manual override of the door can take place
