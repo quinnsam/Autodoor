@@ -154,18 +154,13 @@ void loop() {
     // lock it after about 20 (40*0.5) seconds 
     // if no more interaction detected.
     if (lock_status() != 1){
-        if ( gc == 0 ){
-            //Serial.println("Door is unlocked, it will be locked in 20s if no interaction.");
-            gc = 1;
-        } else if ( gc == 60 ){
-            //Serial.println("Lock the door in 30s.");
-            gc = 31;
-        } else if ( gc >= 120 ){
+        if ( gc >= 120 ){
             lock(1);
-            gc = 0;
         } else {
             gc++;
         }
+    } else {
+      gc = 0;
     }
 
     // Check wheater the door is open or closed using the Magetic door sensor.
