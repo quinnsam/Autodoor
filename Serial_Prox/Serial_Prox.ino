@@ -74,7 +74,7 @@ void setup()
     WriteByte(sensorAddr, 0x3, 0xFE);
 
 	// Calibrates the definitions of the potentiometer values
-    calibrate();
+    // calibrate();
 
 }
 
@@ -105,7 +105,7 @@ void loop() {
                 }
             } else {
                 calibrate();
-            }
+           }
         } else {
             Serial.print("ERROR: Unreconnized command: ");
             char out = input;
