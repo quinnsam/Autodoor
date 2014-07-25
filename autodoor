@@ -28,6 +28,21 @@ import getopt
 def handler(signum, frame):
 	print 'Entered Sighandler'
 	lock()
+
+	# Create a  log file for the session
+	statfile = open('/home/pi/Autodoor/log/statistics.log', 'a')
+
+	statfile.write("###############################**Locks/Unlocks**###############################\n%s" % datetime.datetime.now())
+        statfile.write("Unlocks: %s\n" % log_unlock)
+        statfile.write("Locks: %s\n" % log_lock)
+	statfile.write("###################################**Users**####################################\n")
+        statfile.write("Sam: %s" % log_sam)
+        statfile.write("Ashley: %s" % log_ash)
+        statfile.write("Chauncey: %s" % log_cyan)
+        statfile.write("Chris: %s" % log_chris)
+
+	statfile.close()
+	
 	# Disconneting from mysql server
 	cqdb.db_close()
 	sys.exit()
@@ -68,6 +83,25 @@ socket_connected = [server]  # Number of connected sockets
 #-----------------------------------------------------------------------------#
 test_mode = False
 #-----------------------------------------------------------------------------#
+log_unlock = 0
+log_lock = 0
+log_door = 0
+log_sam = 0
+log_cyan = 0
+log_ash = 0
+log_chris = 0
+#-----------------------------------------------------------------------------#
+
+def logger(user):
+        if user == '10.0.0.111':
+            ++log_sam
+        elif user == '10.0.0.54':
+            ++log_ash
+        elif user == '10.0.0.77':
+            ++log_cyan
+        elif user == '10.0.0.7':
+            ++log_chris
+ 
 
 ###############################################################################
 # Pareses and sets varibles from commandline arguments.
@@ -101,6 +135,7 @@ def lock():
 	print "\n\n LOCKING -", lock_status, " \n\n"
 	if not test_mode:
 		arduino.write('1')
+                ++log_lock
 	else:
 		print 'TEST: Sent Arduino 1'
 	#lock_status = 1
@@ -117,6 +152,7 @@ def unlock():
 	print "\n\n UNLOCKING \n\n"
 	if not test_mode:
 		arduino.write('0')
+                ++log_unlock
 	else:
 		print 'TEST: Sent Arduino 0'
 	#lock_status = 0
@@ -167,7 +203,8 @@ def pinger(que):
 			elif current_time.hour > 5 and current_time.hour < 23:
 				connected.append(ip_mon)
 				print name, ' Has connected:', datetime.datetime.now() 
-				if test_mode:
+				logger(ip_mon)
+                                if test_mode:
 					verify.mailer(name, 2)
 				unlock()
 				sleep(60)
