@@ -22,28 +22,15 @@ import verify
 import sys
 import getopt
 
+
 ###############################################################################
 # Signal handler 
 ###############################################################################
 def handler(signum, frame):
 	print 'Entered Sighandler'
 	lock()
-
-	# Create a  log file for the session
-	statfile = open('/home/pi/Autodoor/log/statistics.log', 'a')
-
-	statfile.write("###############################**Locks/Unlocks**###############################\n%s" % datetime.datetime.now())
-        statfile.write("Unlocks: %s\n" % log_unlock)
-        statfile.write("Locks: %s\n" % log_lock)
-	statfile.write("###################################**Users**####################################\n")
-        statfile.write("Sam: %s" % log_sam)
-        statfile.write("Ashley: %s" % log_ash)
-        statfile.write("Chauncey: %s" % log_cyan)
-        statfile.write("Chris: %s" % log_chris)
-
-	statfile.close()
-	
 	# Disconneting from mysql server
+	print_stats()
 	cqdb.db_close()
 	sys.exit()
 
@@ -83,25 +70,76 @@ socket_connected = [server]  # Number of connected sockets
 #-----------------------------------------------------------------------------#
 test_mode = False
 #-----------------------------------------------------------------------------#
-log_unlock = 0
-log_lock = 0
-log_door = 0
-log_sam = 0
-log_cyan = 0
-log_ash = 0
-log_chris = 0
+log_unlock = 0				# How many times the Unlock function was called
+log_lock = 0				# How many times the lock function was called
+log_door = 0				# How many times the door was opened
+log_sam = 0					# How many times Sam Unlocked the door
+log_cyan = 0				# How many times Chauncey Unlocked the door
+log_ash = 0					# How many times Ashley Unlocked the door
+log_chris = 0				# How many times Chris Unlocked the door
+log_term_lock = 0			# The number of Lock commands sent to the console
+log_term_unlock = 0			# The number of Unlock commands set from the console
+log_term_stat = 0			# The number of Status checks from the terminal
+log_term_cali = 0			# The number of Calibration commands sent from the console
+log_term_con = 0			# The number of checks to see which users are still home
 #-----------------------------------------------------------------------------#
 
-def logger(user):
-        if user == '10.0.0.111':
-            ++log_sam
-        elif user == '10.0.0.54':
-            ++log_ash
-        elif user == '10.0.0.77':
-            ++log_cyan
-        elif user == '10.0.0.7':
-            ++log_chris
- 
+################################################################################
+# Keeps track of all the Locks and Unlocks and where they originated from.
+################################################################################
+def logger(user, opt):
+	global log_unlock, log_lock, log_door, log_sam, log_cyan, log_ash
+	global log_chris, log_term_lock, log_term_unlock, log_term_stat
+	global log_term_cali, log_term_con
+	
+	if user == '10.0.0.111':
+		log_sam += 1
+	elif user == '10.0.0.54':
+		log_ash += 1
+	elif user == '10.0.0.77':
+		log_cyan += 1
+	elif user == '10.0.0.7':
+		log_chris += 1
+	elif opt == '0':
+		log_term_unlock += 1
+		print '+1 unlock', log_term_unlock
+	elif opt == '1':
+		log_term_lock += 1
+		print '+1 lock', log_term_lock
+	elif opt == '2':
+		log_term_stat += 1
+		print '+1 status'
+	elif opt == '3':
+		log_term_cali += 1
+		print '+1 calibrate'
+	elif opt == '4':
+		log_term_con += 1
+		print '+1 users connected'
+
+###############################################################################
+# Prints the statistics from the logging function
+###############################################################################
+def print_stats():
+	# Create a  log file for the session
+	statfile = open('/home/pi/Autodoor/log/statistics.log', 'a')
+
+	statfile.write("###############################**Locks/Unlocks**###############################\n%s\n" % datetime.datetime.now())
+        statfile.write("Unlocks: %s\n" % log_unlock)
+        statfile.write("Locks: %s\n" % log_lock)
+	statfile.write("###################################**Misc.**####################################\n")
+        statfile.write("Terminal Unlocks: %s\n" % log_term_unlock)
+        statfile.write("Terminal Locks: %s\n" % log_term_lock)
+        statfile.write("Terminal Status: %s\n" % log_term_stat)
+        statfile.write("Terminal Calibrates: %s\n" % log_term_cali)
+        statfile.write("Terminal Users: %s\n" % log_term_con)
+	statfile.write("###################################**Users**####################################\n")
+        statfile.write("Sam: %s\n" % log_sam)
+        statfile.write("Ashley: %s\n" % log_ash)
+        statfile.write("Chauncey: %s\n" % log_cyan)
+        statfile.write("Chris: %s\n" % log_chris)
+
+	statfile.close()
+	
 
 ###############################################################################
 # Pareses and sets varibles from commandline arguments.
@@ -131,11 +169,12 @@ for o, a in opts:
 #
 ###############################################################################
 def lock():
-	global lock_status
+	global lock_status, log_lock
 	print "\n\n LOCKING -", lock_status, " \n\n"
 	if not test_mode:
 		arduino.write('1')
-                ++log_lock
+		log_lock += 1
+		print '+1 lock func'
 	else:
 		print 'TEST: Sent Arduino 1'
 	#lock_status = 1
@@ -148,11 +187,12 @@ def lock():
 #
 ###############################################################################
 def unlock():
-	global lock_status
+	global lock_status, log_unlock
 	print "\n\n UNLOCKING \n\n"
 	if not test_mode:
 		arduino.write('0')
-                ++log_unlock
+		log_unlock += 1
+		print '+1 unlock func'
 	else:
 		print 'TEST: Sent Arduino 0'
 	#lock_status = 0
@@ -203,13 +243,18 @@ def pinger(que):
 			elif current_time.hour > 5 and current_time.hour < 23:
 				connected.append(ip_mon)
 				print name, ' Has connected:', datetime.datetime.now() 
-				logger(ip_mon)
+				logger(ip_mon, -1)
                                 if test_mode:
 					verify.mailer(name, 2)
 				unlock()
 				sleep(60)
 				lock()
 				sleep(10)
+				print_log = True
+			elif current_time.hour == 0 and print_log == True:
+				# Prints the stats from the logger every day
+				print_stats()
+				print_log = False
 
 		else :
 			if ip_mon in connected:
@@ -268,6 +313,8 @@ def console_watcher():
 					print 'UNKNOWN', user
 		else:
 			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate, 4-Connected.Clients]', console
+
+		logger(-1, console)
 
 ###############################################################################
 # Perfomes the inital handshake between the connected socket and itself
