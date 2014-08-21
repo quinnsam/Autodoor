@@ -6,13 +6,18 @@ AUTO='/home/pi/Autodoor/autodoor'
 # Location of the run/pid folder
 RUN='/home/pi/Autodoor/run'
 
+# Location of the homeornot.txt sync script
+chome='/home/pi/Autodoor/syncfile'
+
 # Kills any tmux 0 session and starts teh Autodoor program in tmux 0
 start_auto() {
 	echo "############################**Run-Time**##################################"
 	date
 	echo "Autodoor is not running starting it now."
 	tmux kill-session -t 0 > /dev/null 2>&1
+	tmux kill-session -t chome > /dev/null 2>&1
     tmux new -d $AUTO
+    tmux new -s "chome" -d $chome
 }
 
 # Check if autodoor is running or not

@@ -223,6 +223,8 @@ def pinger(que):
 
 	if ip_mon == '10.0.0.72': # or ip_mon == '10.0.0.54':
 		failed_max = 300
+		if cyanjinhome() == 1: # Chaucney is home then do not unlock the door
+			return 1
 	else:
 		failed_max = 5
 
@@ -265,6 +267,33 @@ def pinger(que):
 					connected.remove(ip_mon)
 					print name, ' Disconnected:', datetime.datetime.now() 
 
+###############################################################################
+# Monitors the seiral comunication from the Arduino
+# Tasks:
+# 1.)   Print what is read from the Arduino
+#
+###############################################################################
+def cyanjinhome ():
+	find_str = "entered"                    # String to find
+	fname = "homeornot.txt"     # File to check
+
+	with open(fname, "r") as f:
+		f.seek (0, 2)           # Seek @ EOF
+		fsize = f.tell()        # Get Size
+		f.seek (max (fsize-1024, 0), 0) # Set pos @ last n chars
+		lines = f.readlines()       # Read to end
+		lines = lines[-2:]    # Get last 2 lines
+		print lines
+		# This returns True if any line is exactly find_str + "\n"
+		print find_str + "\n" in lines
+
+		# If you're searching for a substring
+		for line in lines:
+			if find_str in line:
+				print True
+				return 1
+				break
+		return 0
 
 ###############################################################################
 # Monitors the seiral comunication from the Arduino
