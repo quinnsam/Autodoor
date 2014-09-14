@@ -96,7 +96,7 @@ def logger(user, opt):
 		log_sam += 1
 	elif user == '10.0.0.54':
 		log_ash += 1
-	elif user == '10.0.0.77':
+	elif user == '10.0.0.72':
 		log_cyan += 1
 	elif user == '10.0.0.7':
 		log_chris += 1
@@ -122,8 +122,10 @@ def logger(user, opt):
 def print_stats():
 	# Create a  log file for the session
 	statfile = open('/home/pi/Autodoor/log/statistics.log', 'a')
+	p = subprocess.Popen(['tmux', 'list-sessions'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	out, err = p.communicate()
 
-	statfile.write("###############################**Locks/Unlocks**###############################\n%s\n" % datetime.datetime.now())
+	statfile.write("###############################**Locks/Unlocks**###############################\n%s -- %s\n" % (datetime.datetime.now(), out))
         statfile.write("Unlocks: %s\n" % log_unlock)
         statfile.write("Locks: %s\n" % log_lock)
 	statfile.write("###################################**Misc.**####################################\n")
@@ -221,10 +223,10 @@ def pinger(que):
 	if ip_mon == '':
 		return 1
 
-	if ip_mon == '10.0.0.72': # or ip_mon == '10.0.0.54':
-		failed_max = 300
+	if ip_mon == '10.0.0.72' or ip_mon == '10.0.0.54':
+		failed_max = 400
 	else:
-		failed_max = 5
+		failed_max = 10 
 
 	print 'IP watcher started for: ', ip_mon
 	while True:
@@ -365,11 +367,12 @@ def handshake(client):
 ################################################################################
 def calibrate():
 	print 'Calibrator spawned'
-	sleep(20)
-	if not test_mode:
-		arduino.write('3')
-	else:
-		print 'TEST: Sent Arduino: 3'
+	for i in range(0,2):
+		sleep(20)
+		if not test_mode:
+			arduino.write('3')
+		else:
+			print 'TEST: Sent Arduino: 3'
 
 	print 'Calibrator terminated'
 
