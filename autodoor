@@ -102,19 +102,19 @@ def logger(user, opt):
 		log_chris += 1
 	elif opt == '0':
 		log_term_unlock += 1
-		print '+1 unlock', log_term_unlock
+		#print '+1 unlock', log_term_unlock
 	elif opt == '1':
 		log_term_lock += 1
-		print '+1 lock', log_term_lock
+		#print '+1 lock', log_term_lock
 	elif opt == '2':
 		log_term_stat += 1
-		print '+1 status'
+		#print '+1 status'
 	elif opt == '3':
 		log_term_cali += 1
-		print '+1 calibrate'
+		#print '+1 calibrate'
 	elif opt == '4':
 		log_term_con += 1
-		print '+1 users connected'
+		#print '+1 users connected'
 
 ###############################################################################
 # Prints the statistics from the logging function
@@ -176,7 +176,7 @@ def lock():
 	if not test_mode:
 		arduino.write('1')
 		log_lock += 1
-		print '+1 lock func'
+		#print '+1 lock func'
 	else:
 		print 'TEST: Sent Arduino 1'
 	#lock_status = 1
@@ -194,7 +194,7 @@ def unlock():
 	if not test_mode:
 		arduino.write('0')
 		log_unlock += 1
-		print '+1 unlock func'
+		#print '+1 unlock func'
 	else:
 		print 'TEST: Sent Arduino 0'
 	#lock_status = 0
@@ -223,15 +223,8 @@ def pinger(que):
 	if ip_mon == '':
 		return 1
 
-<<<<<<< HEAD
 	if ip_mon == '10.0.0.72' or ip_mon == '10.0.0.54':
 		failed_max = 400
-=======
-	if ip_mon == '10.0.0.72': # or ip_mon == '10.0.0.54':
-		failed_max = 300
-		if cyanjinhome() == 1: # Chaucney is home then do not unlock the door
-			return 1
->>>>>>> e5dde9975194e51b0677d2504f677061c1a4ed1c
 	else:
 		failed_max = 10 
 
