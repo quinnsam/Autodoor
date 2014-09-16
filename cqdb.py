@@ -49,7 +49,7 @@ def querydb (query):
     except:
         # Rollback in case there is any error
         print "Error: unable to fecth data"
-        db.rollback()
+        #db.rollback()
 
 ###################################################################
 # Function	: Fetch only first col from the database.
@@ -182,64 +182,66 @@ def db_command(sql):
 	try:
 		cursor.execute(sql)
 	except:
-        # Rollback in case there is any error
-        print "Error: unable to fecth data"
-        db.rollback()
+		# Rollback in case there is any error
+		print "Error: unable to fecth data"
+		#db.rollback()
 
 ###################################################################
 # insert information into database
 ###################################################################
-def db_insert(user,pw,first,last,sex,deviceName,ipAddr,macAddr):
+def db_insert(user, pw, first, last, sex, deviceName, ipAddr, macAddr):
 	fullName=first + last
-	db_command("INSERT into Persons(LastName, FirstName, FullName, Sex) values("last","first","fullName","sex");")
+	db_command("INSERT into Persons(LastName, FirstName, FullName, Sex) values(%s,%s,%s,%s);" % (last, first, fullName, sex))
 	# detemine the owen of this 
-	owner=fetch_fcol("select ID from Persons where LastName="last" and FirstName="first"")
-	db_command("INSERT into User(Username, Password, Owner) values("user ","pw","owner ");")
-	db_command("INSERT into Addr(DeviceName, Owner, IPaddr, MacAddr) values("deviceName","owner ","ipAddr ","macAddr ");")
+	owner=fetch_fcol("select ID from Persons where LastName=", last, " and FirstName=", first)
+	db_command("INSERT into User(Username, Password, Owner) values(",user, ",", pw, ",", owner, ");")
+	db_command("INSERT into Addr(DeviceName, Owner, IPaddr, MacAddr) values(", deviceName, ",", owner, ",", ipAddr, ",", macAddr, ");")
 ###################################################################
 # Setup		:
 ###################################################################
-#check dependency
-# Connect the db for query alter and insert.
-db = MySQLdb.connect(db_host,db_user,db_pw)
-
-# prepare a cursor object using cursor() method
-cursor = db.cursor()
-
-# create database if it is not exsits
-db_command("create database IF NOT EXISTS",db_name)
-db_command("use",db_name)
-# create the tables for information storage
-db_command("create table if not exists Persons(ID int not null AUTO_INCREMENT, LastName varchar(255), FirstName varchar(255), FullName varchar(255) unique, Sex(6), primary key(ID)  );")
-db_command("create table if not exists Addr(ID int not null AUTO_INCREMENT, DeviceName varchar(24), Owner int(11), IPaddr varchar(12), MacAddr varchar(18), primary key(ID)  );")
-db_command("create table if not exists User(ID int(11) not null AUTO_INCREMENT, Owener(11), Username VARCHAR(16), Password VARCHAR(32), primary key(ID) );")
+def init_setup():
+	#check dependency
+	# Connect the db for query alter and insert.
+	db = MySQLdb.connect(db_host, db_user, db_pw)
+	
+	# prepare a cursor object using cursor() method
+	cursor = db.cursor()
+	
+	# create database if it is not exsits
+	db_command("create database IF NOT EXISTS", db_name)
+	db_command("use", db_name)
+	# create the tables for information storage
+	db_command("create table if not exists Persons(ID int not null AUTO_INCREMENT, LastName varchar(255), FirstName varchar(255), FullName varchar(255) unique, Sex(6), primary key(ID)  );")
+	db_command("create table if not exists Addr(ID int not null AUTO_INCREMENT, DeviceName varchar(24), Owner int(11), IPaddr varchar(12), MacAddr varchar(18), primary key(ID)  );")
+	db_command("create table if not exists User(ID int(11) not null AUTO_INCREMENT, Owener(11), Username VARCHAR(16), Password VARCHAR(32), primary key(ID) );")
 
 
 ###################################################################
 # Pareses and sets varibles from commandline arguments.
 ###################################################################
-try:
-	opts, args = getopt.getopt(sys.argv[1:], "kn:lhq:", ["help", "ipa"])
-except getopt.GetoptError as err:
-	# print help information and exit:
-	print str(err) # will print something like "option -a not recognized"
-	usage()
-	sys.exit(2)
-for o, a in opts:
-	if o == "-q":
-		print a, '-', querydb(a)
-	elif o == "-l":
-		print ip_all()
-	elif o == "-k":
-		print keyip_all()
-	elif o == "-n":
-		print ip2name(a)
-	elif o in ("-h", "--help"):
+if (len(sys.argv) >= 2):
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "kn:lhq:", ["help", "ipa"])
+	except getopt.GetoptError as err:
+		# print help information and exit:
+		print str(err) # will print something like "option -a not recognized"
 		usage()
-		sys.exit()
-	else:
-		assert False, "unhandled option"
-
+		sys.exit(2)
+	for o, a in opts:
+		if o == "-q":
+			print a, '-', querydb(a)
+		elif o == "-l":
+			print ip_all()
+		elif o == "-k":
+			print keyip_all()
+		elif o == "-n":
+			print ip2name(a)
+		elif o in ("-h", "--help"):
+			usage()
+			sys.exit()
+		else:
+			assert False, "unhandled option"
+	
 
 
 

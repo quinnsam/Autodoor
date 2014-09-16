@@ -71,13 +71,13 @@ test_mode = False
 #-----------------------------------------------------------------------------#
 # Class object for logging and users.
 class Log(object):
+	lock = 0
+	unlock = 0
+	status = 0
+	calibrate = 0
+	con = 0
 	def __init__(self, name=str, ip=str):
 		self.name = name
-		Log.lock = 0
-		Log.unlock = 0
-		Log.status = 0
-		Log.calibrate = 0
-		Log.con = 0
 		self.ip = ip
 
 	def get_name(self):
@@ -95,7 +95,7 @@ class Log(object):
 
 
 	def lock(self):
-		Log.lock = 1 + self.lock
+		self.lock += 1
 	def unlock(self):
 		Log.unlock = 1 + self.unlock
 	def status(self):
@@ -106,7 +106,7 @@ class Log(object):
 		Log.con = 1 + self.con
 
 log = [Log('term', 0), Log('glob', 0)]
-print "LOG =", log[0].get_name()
+print "LOG =", log[0].name
 #-----------------------------------------------------------------------------#
 
 ################################################################################
@@ -137,19 +137,19 @@ def print_stats():
 	out, err = p.communicate()
 
 	statfile.write("###############################**Locks/Unlocks**###############################\n%s -- %s\n" % (datetime.datetime.now(), out))
-	statfile.write("Unlocks: %s\n" % log[1].get_unlock())
-	statfile.write("Locks: %s\n" % log[1].get_lock())
+	statfile.write("Unlocks: %s\n" % log[1].unlock)
+	statfile.write("Locks: %s\n" % log[1].lock)
 	statfile.write("###################################**Misc.**####################################\n")
-	statfile.write("Terminal Unlocks: %s\n" % log[0].get_unlock())
-	statfile.write("Terminal Locks: %s\n" % log[0].get_lock())
-	statfile.write("Terminal Status: %s\n" % log[0].get_status())
-	statfile.write("Terminal Calibrates: %s\n" % log[0].get_calibrate())
-	statfile.write("Terminal Users: %s\n" % log[0].get_con())
+	statfile.write("Terminal Unlocks: %s\n" % log[0].unlock)
+	statfile.write("Terminal Locks: %s\n" % log[0].lock)
+	statfile.write("Terminal Status: %s\n" % log[0].status)
+	statfile.write("Terminal Calibrates: %s\n" % log[0].calibrate)
+	statfile.write("Terminal Users: %s\n" % log[0].con)
 	statfile.write("###################################**Users**####################################\n")
 	# Prints logging information for each user
 	for user in range(2,len(log)):
 		#print "user", user
-		statfile.write("%s: %s\n" % (log[user].get_name(), log[user].get_unlock()))
+		statfile.write("%s: %s\n" % (log[user].name, log[user].unlock))
 
 	statfile.close()
 
