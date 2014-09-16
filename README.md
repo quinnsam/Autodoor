@@ -35,13 +35,15 @@ This is the repository for an automatically unlocking door. This allows a door t
 **Installation Proccess**
 =========================
 *0. Pre-install*
-\nThis tutorial is based on a Raspberry-PI running Raspbian.
-If need to install Raspbian you can get it here http://www.raspbian.org/FrontPage
+This tutorial is based on a Raspberry-PI running Raspbian.
+If need to install Raspbian you can get it here 
+    http://www.raspbian.org/FrontPage
 
-\nAll devices must have static ip addressing for the door to automaticaly unlock when they connect to the internet.
+All devices must have static ip addressing for the door to automaticaly unlock when they connect to the internet.
 Google your router for specific instructions on setting static IPs. Usally this setting is under Nat or DHCP settings.
 
 *1. Installing*
+
     sudo apt-get update; sudo apt-get upgrade; sudo apt-get install git pyhton-mysqldb mysql-server tmux
 
     git clone https://github.com/quinnsam/Autodoor.git
@@ -55,19 +57,20 @@ Frist you will need to get the ide for the Arduino
 Next you wil need to install the Autodoor sketch to the Arduino you will find the sketch in the 
 Serial_Prox folder named "Serial_Prox.ino"
 
+Pin Layout:
     D13 --> +Vcc LED                    Connected to digital pin 13
     D9  --> +Vcc Servo                  Digital pin to control the servo
     A0  --> Servo Potentiometer 		Analog pin used to connect the potentiometer
     D2  --> Door Switch                 Digital pin for door switch
 
-Proximity Sensor
+Proximity Sensor:
 
     Red   --> +5V
     White --> I2C SDA (pin-A4)
     Black --> GND
     Grey  --> ISC SCL (pin-A5)
 
-Set Dip switches on the proximity
+Set Dip switches on the proximity:
     1 --> OFF
     2 --> OFF
 
