@@ -3,6 +3,8 @@
 INSTALL_DIR=`pwd`
 LOG_DIR='/var/log'
 RUN_DIR='/var/run'
+WWW_DIR='/var/www'
+CGI_DIR='/usr/lib/cgi-bin'
 USERNAME='pi'
 
 if [ "$(id -u)" != "0" ]; then
@@ -28,6 +30,7 @@ else
 	echo "Run directory already exists"
 fi
 
+ln -s $INSTALL_DIR/html/*.jpg $WWW_DIR; ln -s $ISTALL_DIR/html/*.html $WWW_DIR; ln -s $INSTALL_DIR/html/cgi-bin/door.py $CGI_BIN/ 
 
 echo "*/2 * * * *	$USERNAME	$INSTALL_DIR/door_runtime >> $LOG_DIR/autodoor.log 2>&1" >> /etc/crontab
 
