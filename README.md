@@ -27,19 +27,20 @@ This is the repository for an automatically unlocking door. This allows a door t
 
 **Parts**
   
-  1. Raspberry Pi
-     1. Wireless dongle - Optional
-     2. Power cable
-  2. Arduino
-     1. Usb cable - For power and serial comunication
-     2. Brototyping wires - To connect to the auxilarary components
-  3. Servo motor
-  4. Proximity sensor
-  5. Magnetic door sensor
+  1. Raspberry Pi - http://amzn.com/B009SQQF9C
+     1. Wireless dongle - (Optional) http://amzn.com/B003MTTJOY
+     2. Power cable - Micro USB 
+  2. Arduino - http://amzn.com/B006GX8IAY
+     1. Usb cable - For power and serial comunication (Check if Mini, micro, etc..)
+     2. Prototyping wires - To connect to the auxilarary components http://amzn.com/B007RTD8FG
+  3. Servo motor - https://www.sparkfun.com/products/11965
+  4. Proximity sensor - I used this one but I am sure others will work. http://amzn.com/B007OCGLVY
+  5. Magnetic door sensor - http://www.adafruit.com/products/375
 
 **Installation Proccess**
 =========================
 *0. Pre-install*
+
 This tutorial is based on a Raspberry-PI running Raspbian.
 If need to install Raspbian you can get it here 
     
@@ -57,6 +58,7 @@ Google your router for specific instructions on setting static IPs. Usally this 
     sudo ./installer
 
 *2. Arduino Setup*
+
 Frist you will need to get the ide for the Arduino
 
     http://arduino.cc/en/Main/Software
