@@ -35,18 +35,18 @@ This is the repository for an automatically unlocking door. This allows a door t
 **Installation Proccess**
 =========================
 *0. Pre-install*
-This tutorial is based on a Raspberry-PI running Raspbian.
+\nThis tutorial is based on a Raspberry-PI running Raspbian.
 If need to install Raspbian you can get it here http://www.raspbian.org/FrontPage
 
-All devices must have static ip addressing for the door to automaticaly unlock when they connect to the internet.
+\nAll devices must have static ip addressing for the door to automaticaly unlock when they connect to the internet.
 Google your router for specific instructions on setting static IPs. Usally this setting is under Nat or DHCP settings.
 
 *1. Installing*
-sudo apt-get update; sudo apt-get upgrade; sudo apt-get install git pyhton-mysqldb mysql-server tmux
+    sudo apt-get update; sudo apt-get upgrade; sudo apt-get install git pyhton-mysqldb mysql-server tmux
 
-git clone https://github.com/quinnsam/Autodoor.git
+    git clone https://github.com/quinnsam/Autodoor.git
 
-sudo ./installer
+    sudo ./installer
 
 *Arduino Setup*
 Frist you will need to get the ide for the Arduino
