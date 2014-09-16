@@ -10,6 +10,8 @@
 ##################################################################
 import subprocess
 import MySQLdb
+import getopt
+import sys
 
 ###################################################################
 # Connect the db for query alter and insert.
@@ -18,6 +20,14 @@ import MySQLdb
 db = MySQLdb.connect("localhost","root","iamroot","AutoDoorClients" )
 # prepare a cursor object using cursor() method
 cursor = db.cursor()
+def usage():
+	print "Usage:"
+	print "-n Name2ip"
+	print "-i Lists all ips"
+	print "-h Displays this message"
+	print "-q query the database"
+	print "-k Print key ips"
+
 ###################################################################
 # Retrive the IP data from the database
 # input : A string query
@@ -157,4 +167,33 @@ def return_empw(email):
 ###################################################################
 def db_close():
     db.close()
+
+
+###############################################################################
+# Pareses and sets varibles from commandline arguments.
+###############################################################################
+try:
+	opts, args = getopt.getopt(sys.argv[1:], "kn:ihq:", ["help", "ipa"])
+except getopt.GetoptError as err:
+	# print help information and exit:
+	print str(err) # will print something like "option -a not recognized"
+	usage()
+	sys.exit(2)
+for o, a in opts:
+	if o == "-q":
+		print a, '-', querydb(a)
+	elif o == "-i":
+		print ip_all()
+	elif o == "-k":
+		print keyip_all()
+	elif o == "-n":
+		print ip2name(a)
+	elif o in ("-h", "--help"):
+		usage()
+		sys.exit()
+	else:
+		assert False, "unhandled option"
+
+
+
 

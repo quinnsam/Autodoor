@@ -28,7 +28,6 @@ import getopt
 ###############################################################################
 def handler(signum, frame):
 	print 'Entered Sighandler'
-	lock()
 	# Disconneting from mysql server
 	print_stats()
 	cqdb.db_close()
@@ -70,78 +69,90 @@ socket_connected = [server]  # Number of connected sockets
 #-----------------------------------------------------------------------------#
 test_mode = False
 #-----------------------------------------------------------------------------#
-log_unlock = 0				# How many times the Unlock function was called
-log_lock = 0				# How many times the lock function was called
-log_door = 0				# How many times the door was opened
-log_sam = 0					# How many times Sam Unlocked the door
-log_cyan = 0				# How many times Chauncey Unlocked the door
-log_ash = 0					# How many times Ashley Unlocked the door
-log_chris = 0				# How many times Chris Unlocked the door
-log_term_lock = 0			# The number of Lock commands sent to the console
-log_term_unlock = 0			# The number of Unlock commands set from the console
-log_term_stat = 0			# The number of Status checks from the terminal
-log_term_cali = 0			# The number of Calibration commands sent from the console
-log_term_con = 0			# The number of checks to see which users are still home
+# Class object for logging and users.
+class Log(object):
+	def __init__(self, name=str, ip=str):
+		self.name = name
+		Log.lock = 0
+		Log.unlock = 0
+		Log.status = 0
+		Log.calibrate = 0
+		Log.con = 0
+		self.ip = ip
+
+	def get_name(self):
+		return self.name
+	def get_lock(self):
+		return self.lock
+	def get_unlock(self):
+		return self.unlock
+	def get_status(self):
+		return self.status
+	def get_calibrate(self):
+		return self.calibrate
+	def get_con(self):
+		return self.con
+
+
+	def lock(self):
+		Log.lock = 1 + self.lock
+	def unlock(self):
+		Log.unlock = 1 + self.unlock
+	def status(self):
+		Log.status = 1 + self.status
+	def calibrate(self):
+		Log.calibrate = 1 + self.calibrate
+	def conected(self):
+		Log.con = 1 + self.con
+
+log = [Log('term', 0), Log('glob', 0)]
+print "LOG =", log[0].get_name()
 #-----------------------------------------------------------------------------#
 
 ################################################################################
 # Keeps track of all the Locks and Unlocks and where they originated from.
 ################################################################################
-def logger(user, opt):
-	global log_unlock, log_lock, log_door, log_sam, log_cyan, log_ash
-	global log_chris, log_term_lock, log_term_unlock, log_term_stat
-	global log_term_cali, log_term_con
-	
-	if user == '10.0.0.111':
-		log_sam += 1
-	elif user == '10.0.0.54':
-		log_ash += 1
-	elif user == '10.0.0.72':
-		log_cyan += 1
-	elif user == '10.0.0.7':
-		log_chris += 1
-	elif opt == '0':
-		log_term_unlock += 1
-		#print '+1 unlock', log_term_unlock
-	elif opt == '1':
-		log_term_lock += 1
-		#print '+1 lock', log_term_lock
-	elif opt == '2':
-		log_term_stat += 1
-		#print '+1 status'
-	elif opt == '3':
-		log_term_cali += 1
-		#print '+1 calibrate'
-	elif opt == '4':
-		log_term_con += 1
-		#print '+1 users connected'
+def logger(opt):
+	global log
+
+	if opt == 0:
+		log[0].unlock()
+	elif opt == 1:
+		log[0].lock()
+	elif opt == 2:
+		log[0].status()
+	elif opt == 3:
+		log[0].calibrate()
+	elif opt == 4:
+		log[0].con()
 
 ###############################################################################
 # Prints the statistics from the logging function
 ###############################################################################
 def print_stats():
 	# Create a  log file for the session
+	global log
 	statfile = open('/home/pi/Autodoor/log/statistics.log', 'a')
 	p = subprocess.Popen(['tmux', 'list-sessions'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	out, err = p.communicate()
 
 	statfile.write("###############################**Locks/Unlocks**###############################\n%s -- %s\n" % (datetime.datetime.now(), out))
-        statfile.write("Unlocks: %s\n" % log_unlock)
-        statfile.write("Locks: %s\n" % log_lock)
+	statfile.write("Unlocks: %s\n" % log[1].get_unlock())
+	statfile.write("Locks: %s\n" % log[1].get_lock())
 	statfile.write("###################################**Misc.**####################################\n")
-        statfile.write("Terminal Unlocks: %s\n" % log_term_unlock)
-        statfile.write("Terminal Locks: %s\n" % log_term_lock)
-        statfile.write("Terminal Status: %s\n" % log_term_stat)
-        statfile.write("Terminal Calibrates: %s\n" % log_term_cali)
-        statfile.write("Terminal Users: %s\n" % log_term_con)
+	statfile.write("Terminal Unlocks: %s\n" % log[0].get_unlock())
+	statfile.write("Terminal Locks: %s\n" % log[0].get_lock())
+	statfile.write("Terminal Status: %s\n" % log[0].get_status())
+	statfile.write("Terminal Calibrates: %s\n" % log[0].get_calibrate())
+	statfile.write("Terminal Users: %s\n" % log[0].get_con())
 	statfile.write("###################################**Users**####################################\n")
-        statfile.write("Sam: %s\n" % log_sam)
-        statfile.write("Ashley: %s\n" % log_ash)
-        statfile.write("Chauncey: %s\n" % log_cyan)
-        statfile.write("Chris: %s\n" % log_chris)
+	# Prints logging information for each user
+	for user in range(2,len(log)):
+		#print "user", user
+		statfile.write("%s: %s\n" % (log[user].get_name(), log[user].get_unlock()))
 
 	statfile.close()
-	
+
 
 ###############################################################################
 # Pareses and sets varibles from commandline arguments.
@@ -171,11 +182,11 @@ for o, a in opts:
 #
 ###############################################################################
 def lock():
-	global lock_status, log_lock
+	global lock_status, log
 	print "\n\n LOCKING -", lock_status, " \n\n"
 	if not test_mode:
 		arduino.write('1')
-		log_lock += 1
+		log[1].lock()
 		#print '+1 lock func'
 	else:
 		print 'TEST: Sent Arduino 1'
@@ -189,11 +200,11 @@ def lock():
 #
 ###############################################################################
 def unlock():
-	global lock_status, log_unlock
+	global lock_status, log
 	print "\n\n UNLOCKING \n\n"
 	if not test_mode:
 		arduino.write('0')
-		log_unlock += 1
+		log[1].unlock
 		#print '+1 unlock func'
 	else:
 		print 'TEST: Sent Arduino 0'
@@ -219,13 +230,19 @@ def pinger(que):
 		name = cqdb.ip2name(ip_mon)
 	except:
 		name = 'UNKNOWN'
-	
+
 	if ip_mon == '':
 		return 1
 
+	# Creates a logging profile
+	index = len(log)
+	log.append(Log(name, ip_mon))
+	
+	# Set longer disconnect for certaint phones
 	if ip_mon == '10.0.0.72' or ip_mon == '10.0.0.54':
 		failed_max = 400
 	else:
+		# Default disconnect timeout
 		failed_max = 10 
 
 	print 'IP watcher started for: ', ip_mon
@@ -245,8 +262,8 @@ def pinger(que):
 			elif current_time.hour > 5 and current_time.hour < 23:
 				connected.append(ip_mon)
 				print name, ' Has connected:', datetime.datetime.now() 
-				logger(ip_mon, -1)
-                                if test_mode:
+				log[index].unlock()
+				if test_mode:
 					verify.mailer(name, 2)
 				unlock()
 				sleep(60)
@@ -266,34 +283,6 @@ def pinger(que):
 						verify.mailer(name, 3)
 					connected.remove(ip_mon)
 					print name, ' Disconnected:', datetime.datetime.now() 
-
-###############################################################################
-# Monitors the seiral comunication from the Arduino
-# Tasks:
-# 1.)   Print what is read from the Arduino
-#
-###############################################################################
-def cyanjinhome ():
-	find_str = "entered"                    # String to find
-	fname = "homeornot.txt"     # File to check
-
-	with open(fname, "r") as f:
-		f.seek (0, 2)           # Seek @ EOF
-		fsize = f.tell()        # Get Size
-		f.seek (max (fsize-1024, 0), 0) # Set pos @ last n chars
-		lines = f.readlines()       # Read to end
-		lines = lines[-2:]    # Get last 2 lines
-		print lines
-		# This returns True if any line is exactly find_str + "\n"
-		print find_str + "\n" in lines
-
-		# If you're searching for a substring
-		for line in lines:
-			if find_str in line:
-				print True
-				return 1
-				break
-		return 0
 
 ###############################################################################
 # Monitors the seiral comunication from the Arduino
@@ -343,7 +332,7 @@ def console_watcher():
 		else:
 			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate, 4-Connected.Clients]', console
 
-		logger(-1, console)
+		logger(console)
 
 ###############################################################################
 # Perfomes the inital handshake between the connected socket and itself
@@ -415,7 +404,7 @@ def calibrate():
 #
 ###############################################################################
 def main():
-	global lock_status
+	global lock_status, log
 
 	# Create a PID file for the keep alive crontab
 	pid_file = open('/home/pi/Autodoor/run/autodoor.pid', 'w')
@@ -423,12 +412,12 @@ def main():
 	print 'PID: ', pid
 	pid_file.write("%s" % pid)
 	pid_file.close()
-	
+
 	# Calibrate the Arduino
 	cali = Thread(target=calibrate)
 	cali.setDaemon(True)
 	cali.start()
-	
+
 	# Spawn a dedicated thread for each IP in the database.
 	for ip in ips:
 		if ip != '':
@@ -439,7 +428,7 @@ def main():
 			ip_watcher.setDaemon(True)
 			ip_watcher.start()
 			sleep(1)
-	
+
 	# Spawn Arduino serial monitor
 	arduino_monitor = Thread(target=arduino_watcher)
 	arduino_monitor.setDaemon(True)
@@ -510,7 +499,7 @@ def main():
 							else:
 								print 'TEST: Sent Arduino "3" (Calibrate)'
 							socket.send('<message> <type>ack</type> <text>calibrating</text> </message>')
-						
+
 						elif (request == 'Clients'):
 							# Send Get Clients to the arduino
 							if not test_mode:
