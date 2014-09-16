@@ -1,37 +1,52 @@
 #!/usr/bin/python
 ##################################################################
-# Program : Chaucney Query database functions
-# Author : Chauncey Yan
-# Date : May 16th 2014
+# Program	: Chaucney Query database functions
+# Author 	: Chauncey Yan
+# Date 		: May 16th 2014
 # Revisions : 0.2
 # Description : Query the database on localhost, get the val we need
 #               Printing out in a nicer format. 
-# Updates : Added the Users and 
+# Updates 	: Added the Users and 
 ##################################################################
 import subprocess
 import MySQLdb
 import getopt
 import sys
 
+
+###################################################################
+# Config		:  
+###################################################################
+
+db_host="localhost" # host name, usually localhost
+db_user="root" # database username
+db_pw="iamroot" # database user password
+db_name="AutoDoorClients" # name of the data base
+
+###################################################################
+# Setup		:
 ###################################################################
 # Connect the db for query alter and insert.
-###################################################################
-# Open database connection
-db = MySQLdb.connect("localhost","root","iamroot","AutoDoorClients" )
+db = MySQLdb.connect(db_host,db_user,db_pw,db_name )
+
 # prepare a cursor object using cursor() method
 cursor = db.cursor()
+
+###################################################################
+# Function	:
+###################################################################
 def usage():
 	print "Usage:"
-	print "-n Name2ip"
-	print "-i Lists all ips"
+	print "-n <name> Return ip for specified name"
+	print "-l Lists all ips"
 	print "-h Displays this message"
-	print "-q query the database"
+	print "-q Directly query the database with sql language"
 	print "-k Print key ips"
 
 ###################################################################
-# Retrive the IP data from the database
-# input : A string query
-# output : a nested list of string
+# Function 	: Retrive the IP data from the database
+# input 	: A string query
+# output 	: a nested list of string
 ###################################################################
 def querydb (query):
     try:
@@ -45,9 +60,9 @@ def querydb (query):
         db.rollback()
 
 ###################################################################
-# Fetch only first col from the database.
-# input : A string qurey
-# output : A list of string
+# Function	: Fetch only first col from the database.
+# input 	: A string qurey
+# output 	: A list of string
 ###################################################################
 def fetch_fcol(sql):
     col=[""]
@@ -59,9 +74,9 @@ def fetch_fcol(sql):
     return col[1:]
 
 ###################################################################
-# Fetch the all ips from db
-# input : None
-# output : A list of ip string
+# Function	: Fetch the all ips from db
+# input 	: None
+# output 	: A list of ip string
 ###################################################################
 def ip_all():
     sql = "select IPaddr from Addr"
@@ -69,9 +84,9 @@ def ip_all():
     return ip_arr
 
 ###################################################################
-# Fetch all keyphone ips 
-# input : None
-# output : A list of key ips string
+# Function	: Fetch all keyphone ips 
+# input 	: None
+# output 	: A list of key ips string
 ###################################################################
 def keyip_all():
     sql = "select IPaddr from Addr where DeviceName='KeyPhone'"
@@ -79,9 +94,9 @@ def keyip_all():
     return keyip_arr
 
 ###################################################################
-# Fetch the FirstName acording to ip
-# input : A string ip
-# output : A string Firstname
+# Function	: Fetch the FirstName acording to ip
+# input 	: A string ip
+# output 	: A string Firstname
 ###################################################################
 def ip2name(ip):
 	sql="select FirstName from Addr right join Persons on Persons.ID=Owner where IPaddr=\"" + ip + "\";"
@@ -90,7 +105,7 @@ def ip2name(ip):
 	return name[0]
 
 ###################################################################
-# print out the data from the database
+# print out the name from the database with a weird format
 ###################################################################
 def printname_ip(ips): 
     c=0
@@ -173,7 +188,7 @@ def db_close():
 # Pareses and sets varibles from commandline arguments.
 ###############################################################################
 try:
-	opts, args = getopt.getopt(sys.argv[1:], "kn:ihq:", ["help", "ipa"])
+	opts, args = getopt.getopt(sys.argv[1:], "kn:lhq:", ["help", "ipa"])
 except getopt.GetoptError as err:
 	# print help information and exit:
 	print str(err) # will print something like "option -a not recognized"
@@ -182,7 +197,7 @@ except getopt.GetoptError as err:
 for o, a in opts:
 	if o == "-q":
 		print a, '-', querydb(a)
-	elif o == "-i":
+	elif o == "-l":
 		print ip_all()
 	elif o == "-k":
 		print keyip_all()
