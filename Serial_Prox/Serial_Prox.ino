@@ -19,7 +19,7 @@
 // Time Definitions
 #define PRX_WAIT 	10000		// Time to wait before locking after proximity trigger
 #define SYS_WAIT	2			// Short pasue to allow system to catch up	
-#define RUN_WAIT	500			// Time to wait before starting loop again
+#define RUN_WAIT	50			// Time to wait before starting loop again
 #define CAL_WAIT	1500		// Time to wait for the calibrator
 #define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
 #define AFT_WAIT	1500		// Time to wait to allow door to complete its task
@@ -39,7 +39,7 @@ extern int door_position();
 
 // Set the sensor address here
 const uint8_t sensorAddr = SENSOR_ADDR_OFF_OFF;
-int led_pin = 13;       // LED connected to digital pin 13
+int led_pin = 11;       // LED connected to digital pin 13
 int servo_pin = 9;      //Digital pin to control the servo
 int pot_pin = A0; 		// analog pin used to connect the potentiometer
 int pot_val = -1;       // variable to read the value from the analog pin 
@@ -50,6 +50,7 @@ int door_pin = 2;
 
 //global counter
 int gc = 0;
+int led_cool[2] = {255, 0};
 int door_sensor = -1;
 
 // Servo Object
@@ -134,7 +135,7 @@ void loop() {
             //Serial.println("Nothing detected");
             delay(SYS_WAIT);
         } else {
-            Serial.println("Object detected");
+            Serial.println("Proximity Sensor: Object detected");
 
             if (lock(0) != 0) {
                 Serial.println("ERROR: Could not execute command UNLOCK");
@@ -151,10 +152,10 @@ void loop() {
     }
 
     // check if the door is unlocked. 
-    // lock it after about 20 (40*0.5) seconds 
+    // lock it after about 20 (0*0.05) seconds 
     // if no more interaction detected.
     if (lock_status() != 1){
-        if ( gc >= 120 ){
+        if ( gc >= 1200 ){
             lock(1);
         } else {
             gc++;
@@ -248,6 +249,7 @@ void calibrate () {
  ******************************************************************************/
 int lock_status() {
     int rv = -1;
+
 	pot_val = analogRead(pot_pin); // read the value of the potentiometer
 
     //print_info();
@@ -263,9 +265,26 @@ int lock_status() {
 	
 	// Turns on the door led light when the door is unlocked
     if (rv == 0) {
-        digitalWrite(led_pin, HIGH);   // sets the LED on
+        //digitalWrite(led_pin, HIGH);   // sets the LED on
+		analogWrite(led_pin,led_cool[0]);
+		if(led_cool[1]){
+			led_cool[0] = led_cool[0] + 5;  
+			if (led_cool[0] >= 255) {
+				led_cool[1] = 0;
+				led_cool[0] = 255;
+			}
+		} else {
+			led_cool[0] = led_cool[0] - 5;
+			if (led_cool[0] <= 0) {
+				led_cool[1] = 1;
+				led_cool[0] = 0;
+			}
+		}
+
     } else {
-        digitalWrite(led_pin, LOW);    // sets the LED off
+        //digitalWrite(led_pin, LOW);    // sets the LED off
+		analogWrite(led_pin, 0);    // sets the LED off
+		led_cool[0] = 255;
     }
 
 	return rv;
@@ -310,9 +329,9 @@ int lock(int lock_pos) {
     int angle;
     int door_open = 1;
     if (lock_pos == 1) {
-        Serial.println("Now Locking");
+        Serial.println("----LOCKING----");
     } else if (lock_pos == 0) {
-        Serial.println("Now Unlocking");
+        Serial.println("----UNLOCKING----");
     } else {
         Serial.print("Unreconized command for lock():");
         Serial.println(lock_pos);
@@ -323,7 +342,7 @@ int lock(int lock_pos) {
         Serial.println("ALREADY ins desired state.");
         return lock_pos;
     } else {
-        print_info();
+        //print_info();
         if (lock_pos == 1) {
             angle = LOCK;
         } else if (lock_pos == 0) {

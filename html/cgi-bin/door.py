@@ -27,12 +27,16 @@ print '<title>Autodoor Website</title>'
 print '</head>'
 print '<body>'
 print '<h2>Contacting Earth to unlock the door, now.</h2>'
-if username != '' and password != '' and request != '':
+
+if request == None:
+	data = 'Unsuported Browser.. for now sorry! :('
+
+if username != '' and password != '' and request != '' and request != None:
 	message = "<message><type>handshake</type><user>%s</user><pin>%s</pin></message>" % (username, password)
 	s.send(message)
 	data = s.recv(size)
-	#print "<p>User:%s, pin:%s, Request:%s</p>" % (username, password, request)
-	
+	#print "<p>User:%s, pin:%s, Request:(%s)</p>" % (username, password, request)
+		
 	if data == '<message> <type>handshake</type> <from>earth</from> </message>':
 		print "<h2>PASSED</h2>"
 		message = "<message> <type>%s</type> <user>%s</user> </message>" % (request, username)
