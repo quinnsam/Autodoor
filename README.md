@@ -51,7 +51,7 @@ Google your router for specific instructions on setting static IPs. Usally this 
 
 *1. Installing*
 
-    sudo apt-get update; sudo apt-get upgrade; sudo apt-get install git pyhton-mysqldb mysql-server tmux apache2
+    sudo apt-get update; sudo apt-get upgrade; sudo apt-get install git pyhton-mysqldb mysql-server tmux apache2 arduino-mk
 
     git clone https://github.com/quinnsam/Autodoor.git
 

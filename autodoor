@@ -71,42 +71,27 @@ test_mode = False
 #-----------------------------------------------------------------------------#
 # Class object for logging and users.
 class Log(object):
-	lock = 0
-	unlock = 0
-	status = 0
-	calibrate = 0
-	con = 0
 	def __init__(self, name=str, ip=str):
-		self.name = name
-		self.ip = ip
-
-	def get_name(self):
-		return self.name
-	def get_lock(self):
-		return self.lock
-	def get_unlock(self):
-		return self.unlock
-	def get_status(self):
-		return self.status
-	def get_calibrate(self):
-		return self.calibrate
-	def get_con(self):
-		return self.con
-
+		self.mlock = 0
+		self.munlock = 0
+		self.mstatus = 0
+		self.mcalibrate = 0
+		self.mcon = 0
+		self.mname = name
+		self.mip = ip
 
 	def lock(self):
-		self.lock += 1
+		self.mlock += 1
 	def unlock(self):
-		Log.unlock = 1 + self.unlock
+		self.munlock += 1
 	def status(self):
-		Log.status = 1 + self.status
+		self.mstatus += 1
 	def calibrate(self):
-		Log.calibrate = 1 + self.calibrate
+		self.mcalibrate += 1
 	def conected(self):
-		Log.con = 1 + self.con
+		self.mcon += 1
 
 log = [Log('term', 0), Log('glob', 0)]
-print "LOG =", log[0].name
 #-----------------------------------------------------------------------------#
 
 ################################################################################
@@ -115,16 +100,16 @@ print "LOG =", log[0].name
 def logger(opt):
 	global log
 
-	if opt == 0:
+	if opt == '0':
 		log[0].unlock()
-	elif opt == 1:
+	elif opt == '1':
 		log[0].lock()
-	elif opt == 2:
+	elif opt == '2':
 		log[0].status()
-	elif opt == 3:
+	elif opt == '3':
 		log[0].calibrate()
-	elif opt == 4:
-		log[0].con()
+	elif opt == '4':
+		log[0].connected()
 
 ###############################################################################
 # Prints the statistics from the logging function
@@ -137,19 +122,19 @@ def print_stats():
 	out, err = p.communicate()
 
 	statfile.write("###############################**Locks/Unlocks**###############################\n%s -- %s\n" % (datetime.datetime.now(), out))
-	statfile.write("Unlocks: %s\n" % log[1].unlock)
-	statfile.write("Locks: %s\n" % log[1].lock)
+	statfile.write("Unlocks: %s\n" % log[1].munlock)
+	statfile.write("Locks: %s\n" % log[1].mlock)
 	statfile.write("###################################**Misc.**####################################\n")
-	statfile.write("Terminal Unlocks: %s\n" % log[0].unlock)
-	statfile.write("Terminal Locks: %s\n" % log[0].lock)
-	statfile.write("Terminal Status: %s\n" % log[0].status)
-	statfile.write("Terminal Calibrates: %s\n" % log[0].calibrate)
-	statfile.write("Terminal Users: %s\n" % log[0].con)
+	statfile.write("Terminal Unlocks: %s\n" % log[0].munlock)
+	statfile.write("Terminal Locks: %s\n" % log[0].mlock)
+	statfile.write("Terminal Status: %s\n" % log[0].mstatus)
+	statfile.write("Terminal Calibrates: %s\n" % log[0].mcalibrate)
+	statfile.write("Terminal Users: %s\n" % log[0].mcon)
 	statfile.write("###################################**Users**####################################\n")
 	# Prints logging information for each user
 	for user in range(2,len(log)):
 		#print "user", user
-		statfile.write("%s: %s\n" % (log[user].name, log[user].unlock))
+		statfile.write("%s: %s\n" % (log[user].mname, log[user].munlock))
 
 	statfile.close()
 
@@ -183,7 +168,6 @@ for o, a in opts:
 ###############################################################################
 def lock():
 	global lock_status, log
-	print "\n\n LOCKING -", lock_status, " \n\n"
 	if not test_mode:
 		arduino.write('1')
 		log[1].lock()
@@ -201,10 +185,9 @@ def lock():
 ###############################################################################
 def unlock():
 	global lock_status, log
-	print "\n\n UNLOCKING \n\n"
 	if not test_mode:
 		arduino.write('0')
-		log[1].unlock
+		log[1].unlock()
 		#print '+1 unlock func'
 	else:
 		print 'TEST: Sent Arduino 0'

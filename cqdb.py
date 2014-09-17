@@ -13,9 +13,8 @@ import MySQLdb
 import getopt
 import sys
 
-
 ###################################################################
-# Config		:  
+# Config	:  
 ###################################################################
 
 db_host="localhost" # host name, usually localhost
@@ -23,6 +22,18 @@ db_user="root" # database username
 db_pw="iamroot" # database user password
 db_name="AutoDoorClients" # name of the data base
 
+###################################################################
+# Init		:
+###################################################################
+#check dependency
+# Connect the db for query alter and insert.
+db = MySQLdb.connect(db_host, db_user, db_pw)
+
+# prepare a cursor object using cursor() method
+cursor = db.cursor()
+
+# create database if it is not exsits
+cursor.execute("use " + db_name)
 
 ###################################################################
 # Function	:
@@ -34,6 +45,16 @@ def usage():
 	print "-h Displays this message"
 	print "-q Directly query the database with sql language"
 	print "-k Print key ips"
+
+###################################################################
+# Function	:
+###################################################################
+def init_setup():
+	db_command("create database IF NOT EXISTS " + db_name)
+	# create the tables for information storage
+	db_command("create table if not exists Persons(ID int not null AUTO_INCREMENT, LastName varchar(255), FirstName varchar(255), FullName varchar(255) unique, Sex(6), primary key(ID)  );")
+	db_command("create table if not exists Addr(ID int not null AUTO_INCREMENT, DeviceName varchar(24), Owner int(11), IPaddr varchar(12), MacAddr varchar(18), primary key(ID)  );")
+	db_command("create table if not exists User(ID int(11) not null AUTO_INCREMENT, Owener(11), Username VARCHAR(16), Password VARCHAR(32), primary key(ID) );")
 
 ###################################################################
 # Function 	: Retrive the IP data from the database
@@ -183,7 +204,7 @@ def db_command(sql):
 		cursor.execute(sql)
 	except:
 		# Rollback in case there is any error
-		print "Error: unable to fecth data"
+		print "Error: unable to execute the command"
 		#db.rollback()
 
 ###################################################################
@@ -196,24 +217,6 @@ def db_insert(user, pw, first, last, sex, deviceName, ipAddr, macAddr):
 	owner=fetch_fcol("select ID from Persons where LastName=", last, " and FirstName=", first)
 	db_command("INSERT into User(Username, Password, Owner) values(",user, ",", pw, ",", owner, ");")
 	db_command("INSERT into Addr(DeviceName, Owner, IPaddr, MacAddr) values(", deviceName, ",", owner, ",", ipAddr, ",", macAddr, ");")
-###################################################################
-# Setup		:
-###################################################################
-def init_setup():
-	#check dependency
-	# Connect the db for query alter and insert.
-	db = MySQLdb.connect(db_host, db_user, db_pw)
-	
-	# prepare a cursor object using cursor() method
-	cursor = db.cursor()
-	
-	# create database if it is not exsits
-	db_command("create database IF NOT EXISTS", db_name)
-	db_command("use", db_name)
-	# create the tables for information storage
-	db_command("create table if not exists Persons(ID int not null AUTO_INCREMENT, LastName varchar(255), FirstName varchar(255), FullName varchar(255) unique, Sex(6), primary key(ID)  );")
-	db_command("create table if not exists Addr(ID int not null AUTO_INCREMENT, DeviceName varchar(24), Owner int(11), IPaddr varchar(12), MacAddr varchar(18), primary key(ID)  );")
-	db_command("create table if not exists User(ID int(11) not null AUTO_INCREMENT, Owener(11), Username VARCHAR(16), Password VARCHAR(32), primary key(ID) );")
 
 
 ###################################################################
