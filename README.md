@@ -68,7 +68,7 @@ Serial_Prox folder named "Serial_Prox.ino"
 
 Pin Layout:
 
-    D13 --> +Vcc LED                    Connected to digital pin 13
+    D11 --> +Vcc LED                    Connected to digital PWM pin 11
     D9  --> +Vcc Servo                  Digital pin to control the servo
     A0  --> Servo Potentiometer 		Analog pin used to connect the potentiometer
     D2  --> Door Switch                 Digital pin for door switch
