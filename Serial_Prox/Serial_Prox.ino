@@ -128,28 +128,28 @@ void loop() {
     uint8_t val;
 
     // Get the value from the sensor
-    if (ReadByte(sensorAddr, 0x0, &val) == 0) {
-        /* The second LSB indicates if something was not detected, i.e.,
-           LO = object detected, HI = nothing detected */
-        if (val & 0x2) {
-            //Serial.println("Nothing detected");
-            delay(SYS_WAIT);
-        } else {
-            Serial.println("Proximity Sensor: Object detected");
-
-            if (lock(0) != 0) {
-                Serial.println("ERROR: Could not execute command UNLOCK");
-            }
-            delay(PRX_WAIT);
-            if (lock(1) != 1) {
-                Serial.println("ERROR: Could not execute command LOCK");
-            }
-
-            delay(SYS_WAIT);
-        }
-    } else {
-        Serial.println("Failed to read from sensor");
-    }
+//    if (ReadByte(sensorAddr, 0x0, &val) == 0) {
+//        /* The second LSB indicates if something was not detected, i.e.,
+//           LO = object detected, HI = nothing detected */
+//        if (val & 0x2) {
+//            //Serial.println("Nothing detected");
+//            delay(SYS_WAIT);
+//        } else {
+//            Serial.println("Proximity Sensor: Object detected");
+//
+//            if (lock(0) != 0) {
+//                Serial.println("ERROR: Could not execute command UNLOCK");
+//            }
+//            delay(PRX_WAIT);
+//            if (lock(1) != 1) {
+//                Serial.println("ERROR: Could not execute command LOCK");
+//            }
+//
+//            delay(SYS_WAIT);
+//        }
+//    } else {
+//        Serial.println("Failed to read from sensor");
+//    }
 
     // check if the door is unlocked. 
     // lock it after about 20 (0*0.05) seconds 
