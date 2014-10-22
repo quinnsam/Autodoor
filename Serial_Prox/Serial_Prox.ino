@@ -24,6 +24,10 @@
 #define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
 #define AFT_WAIT	1500		// Time to wait to allow door to complete its task
 
+#define trigPin 12
+#define echoPin 11
+int Buzzer = 8;
+
 // Functions declarations
 extern int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data);
 extern void WriteByte(uint8_t addr, uint8_t reg, byte data);
@@ -39,7 +43,7 @@ extern int door_position();
 
 // Set the sensor address here
 const uint8_t sensorAddr = SENSOR_ADDR_OFF_OFF;
-int led_pin = 11;       // LED connected to digital pin 13
+int led_pin = 10;       // LED connected to digital pin 13
 int servo_pin = 9;      //Digital pin to control the servo
 int pot_pin = A0; 		// analog pin used to connect the potentiometer
 int pot_val = -1;       // variable to read the value from the analog pin 
@@ -72,10 +76,14 @@ void setup()
     Wire.begin();
 
     // Adrress for the proximity sensor 
-    WriteByte(sensorAddr, 0x3, 0xFE);
+    //WriteByte(sensorAddr, 0x3, 0xFE);
 
 	// Calibrates the definitions of the potentiometer values
     calibrate();
+    
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(Buzzer, OUTPUT);
 
 }
 
@@ -128,6 +136,35 @@ void loop() {
     uint8_t val;
 
     // Get the value from the sensor
+  int duration, distance;
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(2000);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = (duration/2) / 29.1;
+  if (distance >= 5 || distance <= 0){
+    Serial.println("no object detected");
+    digitalWrite(Buzzer, LOW);
+ 
+  }
+  else {
+    Serial.println("object detected");
+    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
+    delay(500);
+    tone(Buzzer, 800);          // play 800Hz tone for 500ms
+    delay(500);
+    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
+    delay(500);
+    tone(Buzzer, 800);          // play 800Hz tone for 500ms
+    delay(500);
+    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
+    delay(500);
+    tone(Buzzer, 800);          // play 800Hz tone for 500ms
+    delay(500);
+    noTone(Buzzer);
+  }
+  delay(400);
+
 //    if (ReadByte(sensorAddr, 0x0, &val) == 0) {
 //        /* The second LSB indicates if something was not detected, i.e.,
 //           LO = object detected, HI = nothing detected */
