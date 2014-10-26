@@ -13,11 +13,11 @@
 #define SENSOR_ADDR_ON_ON    (0x20)
 
 // Lock angle definitions
-#define LOCK        40
-#define UNLOCK      140
+#define LOCK        45
+#define UNLOCK      165
 
 // Time Definitions
-#define PRX_WAIT 	10000		// Time to wait before locking after proximity trigger
+#define PRX_WAIT 	15000		// Time to wait before locking after proximity trigger
 #define SYS_WAIT	2			// Short pasue to allow system to catch up	
 #define RUN_WAIT	50			// Time to wait before starting loop again
 #define CAL_WAIT	1500		// Time to wait for the calibrator
@@ -132,25 +132,32 @@ void loop() {
   duration = pulseIn(echoPin, HIGH);
   distance = (duration/2) / 29.1;
   if (distance >= 5 || distance <= 0){
-    Serial.println("no object detected");
+    //Serial.println("no object detected");
     digitalWrite(Buzzer, LOW);
  
   }
   else {
-	  if (lock(0) != 0) {
-		  Serial.println("ERROR: Could not execute command UNLOCK");
-	  }
+    tone(Buzzer, 800);
+    delay(250);
+    noTone(Buzzer);
+    if (lock(0) != 0) {
+      Serial.println("ERROR: Could not execute command UNLOCK");
+    }
+    delay(PRX_WAIT);
+    if (lock(1) != 1) {
+      Serial.println("ERROR: Could not execute command LOCK");
+    }
 
     Serial.println("object detected");
-    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
-    delay(500);
-    tone(Buzzer, 800);          // play 800Hz tone for 500ms
-    delay(500);
-    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
-    delay(500);
-    tone(Buzzer, 800);          // play 800Hz tone for 500ms
-    delay(500);
-    noTone(Buzzer);
+//    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
+//    delay(500);
+//    tone(Buzzer, 800);          // play 800Hz tone for 500ms
+//    delay(500);
+//    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
+//    delay(500);
+//    tone(Buzzer, 800);          // play 800Hz tone for 500ms
+//    delay(500);
+    
   }
   delay(400);
 
@@ -364,7 +371,7 @@ int lock(int lock_pos) {
 
     int l_status = lock_status();
     int angle;
-    int door_open = 1;
+    //int door_open = 1;
     if (lock_pos == 1) {
         Serial.println("----LOCKING----");
     } else if (lock_pos == 0) {
@@ -373,7 +380,6 @@ int lock(int lock_pos) {
         Serial.print("Unreconized command for lock():");
         Serial.println(lock_pos);
     }
-
     // Read the position of the lock currently
     if (l_status == lock_pos) {
         Serial.println("ALREADY ins desired state.");
@@ -387,20 +393,19 @@ int lock(int lock_pos) {
         }
     }
 
-
     // set the servo position  
     if (angle == LOCK) {
         // Waits till the door is closed before locking.
-		while (door_open == 1) {
-            if (door_position() == 1) {
-                delay(DSR_WAIT);
+	//	while (door_open == 1) {
+          //  if (door_position() == 1) {
+            //    delay(DSR_WAIT);
                 door.attach(9);
                 door.write(LOCK);
-                door_open = 0;
-            } else {
-                continue;
-            }
-        }
+             //   door_open = 0;
+            //} else {
+             //   continue;
+            //}
+       // }
 	// No need to wait for the door to close to unlock
     } else {
         door.attach(9);
