@@ -124,17 +124,6 @@ void loop() {
         }
     }
 
-    //Begin proximity monitoring
-    // 1. Connect one end of the cable into either Molex connectors on the sensor
-    //Connect the other end of the cable to the Arduino board:
-    //RED: 5V
-    //WHITE:  I2C SDA (pin A4 on Uno; pin 20 on Mega)
-    //BLACK: GND
-    //GREY: I2C SCL (pin A5 on Uno; pin 21 on Mega)
-    //Set the DIP switch on the sensor to set the sensor address (check back of sensor for possible addresses)
-    // Varible to store proximity data in
-    uint8_t val;
-
     // Get the value from the sensor
   int duration, distance;
   digitalWrite(trigPin, HIGH);
@@ -148,11 +137,11 @@ void loop() {
  
   }
   else {
+	  if (lock(0) != 0) {
+		  Serial.println("ERROR: Could not execute command UNLOCK");
+	  }
+
     Serial.println("object detected");
-    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
-    delay(500);
-    tone(Buzzer, 800);          // play 800Hz tone for 500ms
-    delay(500);
     tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
     delay(500);
     tone(Buzzer, 800);          // play 800Hz tone for 500ms
@@ -164,6 +153,17 @@ void loop() {
     noTone(Buzzer);
   }
   delay(400);
+
+    //Begin proximity monitoring
+    // 1. Connect one end of the cable into either Molex connectors on the sensor
+    //Connect the other end of the cable to the Arduino board:
+    //RED: 5V
+    //WHITE:  I2C SDA (pin A4 on Uno; pin 20 on Mega)
+    //BLACK: GND
+    //GREY: I2C SCL (pin A5 on Uno; pin 21 on Mega)
+    //Set the DIP switch on the sensor to set the sensor address (check back of sensor for possible addresses)
+    // Varible to store proximity data in
+    uint8_t val;
 
 //    if (ReadByte(sensorAddr, 0x0, &val) == 0) {
 //        /* The second LSB indicates if something was not detected, i.e.,
@@ -202,7 +202,7 @@ void loop() {
     }
 
     // Check wheater the door is open or closed using the Magetic door sensor.
-    door_position();
+    //door_position();
 
     // Run again in 0.5 s (500 ms)
     delay(RUN_WAIT);

@@ -10,8 +10,8 @@ then
 		echo "##############################**Net-Checker**#############################"
 		date
 		echo "Not connected to the Interwebs, Rebooting"
-	    reboot
+	    sudo reboot
 	fi
 fi
-sleep 2m
+sleep 10m
 done
