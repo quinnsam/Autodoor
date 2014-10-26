@@ -12,7 +12,6 @@ start_auto() {
 	date
 	echo "Autodoor is not running starting it now."
 	tmux kill-session -t auto > /dev/null 2>&1
-	tmux kill-session -t chome > /dev/null 2>&1
     tmux new -s auto -d $AUTO
 }
 
