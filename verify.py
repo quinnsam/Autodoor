@@ -29,7 +29,7 @@ def shake(user, pin):
 
 def mailer(user, status):
 	print 'Sending Email to email list'
-	sender = 'comprepair3@gmail.com'
+	sender = 'chaunceyyann@gmail.com'
 	if status == 0:
 		msg = MIMEText('%s has logged in to Autodoor App' % user)
 	elif status == 2:
@@ -40,12 +40,12 @@ def mailer(user, status):
 		msg = MIMEText('%s FAILED to login to the Autodoor App' % user)
 	msg['Subject'] = 'Autodoor activity'
 	msg['From'] = sender
-	msg['To'] = 'quinnsam1@gmail.com'
+	msg['To'] = 'chaunceyyann@gmail.com'
 	s = smtplib.SMTP('smtp.gmail.com',587)
 	s.starttls()
 	s.ehlo()
 	s.login(sender, cqdb.return_empw(sender))
-	s.sendmail(sender, ['quinnsam1@gmail.com', 'chaunceyyann@gmail.com'], msg.as_string())
+	s.sendmail(sender, ['chaunceyyann@gmail.com'], msg.as_string())
 	s.quit()
 	print 'Email Sent'
 
