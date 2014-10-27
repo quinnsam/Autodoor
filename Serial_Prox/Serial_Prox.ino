@@ -14,15 +14,14 @@
 
 // Lock angle definitions
 #define LOCK        45
-#define UNLOCK      165
+#define UNLOCK      160
 
 // Time Definitions
-#define PRX_WAIT 	15000		// Time to wait before locking after proximity trigger
 #define SYS_WAIT	2			// Short pasue to allow system to catch up	
-#define RUN_WAIT	50			// Time to wait before starting loop again
-#define CAL_WAIT	1500		// Time to wait for the calibrator
+#define RUN_WAIT	500			// Time to wait before starting loop again
+#define CAL_WAIT	1500		        // Time to wait for the calibrator
 #define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
-#define AFT_WAIT	1500		// Time to wait to allow door to complete its task
+#define AFT_WAIT	800		        // Time to wait to allow door to complete its task
 
 #define trigPin 12
 #define echoPin 11
@@ -59,6 +58,10 @@ int door_sensor = -1;
 
 // Servo Object
 Servo door;
+
+// Ultrasonic unlock sensor
+int duration, distance;
+
 
 // One-time setup
 void setup()
@@ -98,10 +101,22 @@ void loop() {
             if( input == '1') {
                 if (lock(1) != 1) {
                     Serial.println("ERROR: Could not execute command LOCK");
+                    errorTone();
+                    delay(1000);
+                    if (lock(1) != 1) {
+                    Serial.println("ERROR: Could not execute command LOCK");
+                    errorTone();
+                    }
                 }
             } else if ( input == '0') {
                 if (lock(0) != 0) {
                     Serial.println("ERROR: Could not execute command UNLOCK");
+                    errorTone();
+                    delay(1000);
+                    if (lock(0) != 0) {
+                    Serial.println("ERROR: Could not execute command UNLOCK");
+                    errorTone();
+                    }
                 }
             } else if ( input == '2' ){
                 stat = lock_status();
@@ -125,41 +140,28 @@ void loop() {
     }
 
     // Get the value from the sensor
-  int duration, distance;
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(2000);
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH);
   distance = (duration/2) / 29.1;
-  if (distance >= 5 || distance <= 0){
+  
+  
+  if (distance >= 10 || distance <= 0){
     //Serial.println("no object detected");
     digitalWrite(Buzzer, LOW);
- 
   }
-  else {
-    tone(Buzzer, 800);
-    delay(250);
-    noTone(Buzzer);
+  else { // unlock the door
     if (lock(0) != 0) {
       Serial.println("ERROR: Could not execute command UNLOCK");
+      errorTone();
+      delay(1000);
+      if (lock(0) != 0) {
+      Serial.println("ERROR: Could not execute command UNLOCK");
+      errorTone();
+      }
     }
-    delay(PRX_WAIT);
-    if (lock(1) != 1) {
-      Serial.println("ERROR: Could not execute command LOCK");
-    }
-
-    Serial.println("object detected");
-//    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
-//    delay(500);
-//    tone(Buzzer, 800);          // play 800Hz tone for 500ms
-//    delay(500);
-//    tone(Buzzer, 400);          // play 400 Hz tone for 500 ms
-//    delay(500);
-//    tone(Buzzer, 800);          // play 800Hz tone for 500ms
-//    delay(500);
-    
   }
-  delay(400);
 
     //Begin proximity monitoring
     // 1. Connect one end of the cable into either Molex connectors on the sensor
@@ -170,7 +172,7 @@ void loop() {
     //GREY: I2C SCL (pin A5 on Uno; pin 21 on Mega)
     //Set the DIP switch on the sensor to set the sensor address (check back of sensor for possible addresses)
     // Varible to store proximity data in
-    uint8_t val;
+    //uint8_t val;
 
 //    if (ReadByte(sensorAddr, 0x0, &val) == 0) {
 //        /* The second LSB indicates if something was not detected, i.e.,
@@ -196,10 +198,10 @@ void loop() {
 //    }
 
     // check if the door is unlocked. 
-    // lock it after about 20 (0*0.05) seconds 
+    // lock it after about 15 (30*0.5) seconds 
     // if no more interaction detected.
     if (lock_status() != 1){
-        if ( gc >= 1200 ){
+        if ( gc >= 30 ){
             lock(1);
         } else {
             gc++;
@@ -401,6 +403,7 @@ int lock(int lock_pos) {
             //    delay(DSR_WAIT);
                 door.attach(9);
                 door.write(LOCK);
+                locktone();
              //   door_open = 0;
             //} else {
              //   continue;
@@ -410,6 +413,7 @@ int lock(int lock_pos) {
     } else {
         door.attach(9);
         door.write(UNLOCK);
+        unlocktone();
     }
 	delay(AFT_WAIT);
     // Detach servo so manual override of the door can take place
@@ -417,4 +421,32 @@ int lock(int lock_pos) {
 
     return lock_status();
 }
-
+void unlocktone(){ // keep these two funtion under 1000 ms
+    tone(Buzzer, 800);          // play 400 Hz tone for 500 ms
+    delay(250);
+    tone(Buzzer, 600);          // play 800Hz tone for 500ms
+    delay(250);
+    tone(Buzzer, 800);          // play 400 Hz tone for 500 ms
+    delay(250);
+    //tone(Buzzer, 400);          // play 800Hz tone for 500ms
+    //delay(250);
+    noTone(Buzzer);
+}
+void locktone(){ // keep these two funtion under 1000 ms
+    tone(Buzzer, 600);          // play 400 Hz tone for 500 ms
+    delay(250);
+    tone(Buzzer, 800);          // play 800Hz tone for 500ms
+    delay(250);
+    tone(Buzzer, 600);          // play 400 Hz tone for 500 ms
+    delay(250);
+    //tone(Buzzer, 400);          // play 800Hz tone for 500ms
+    //delay(250);
+    noTone(Buzzer);
+}
+void errorTone(){ 
+   tone(Buzzer, 1000);
+   delay(100);
+   tone(Buzzer, 600);
+   delay(100);
+   noTone(Buzzer); 
+}

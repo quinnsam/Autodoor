@@ -20,7 +20,7 @@ import sys
 db_host="localhost" # host name, usually localhost
 db_user="root" # database username
 db_pw="iamroot" # database user password
-db_name="AutoDoorClients" # name of the data base
+db_name="Autodoor" # name of the data base
 
 ###################################################################
 # Init		:
@@ -102,7 +102,7 @@ def ip_all():
 # output 	: A list of key ips string
 ###################################################################
 def keyip_all():
-    sql = "select IPaddr from Addr where DeviceName='KeyPhone'"
+    sql = "select IPaddr from Addr where DeviceType='Key'"
     keyip_arr=fetch_fcol(sql)
     return keyip_arr
 
@@ -112,7 +112,7 @@ def keyip_all():
 # output 	: A string Firstname
 ###################################################################
 def ip2name(ip):
-	sql="select FirstName from Addr right join Persons on Persons.ID=Owner where IPaddr=\"" + ip + "\";"
+	sql="select FirstName from Addr right join Person on Person.ID=Owner where IPaddr=\"" + ip + "\";"
 	name=fetch_fcol(sql)
 	#print name
 	return name[0]
@@ -125,7 +125,7 @@ def printname_ip(ips):
     s="     "
     for ip in ips:
         c+=1
-        sql = "select FirstName as Owner from Addr Left join Persons on Persons.ID=Owner where IPaddr='" + ip + "';"
+        sql = "select FirstName as Owner from Addr Left join Person on Person.ID=Owner where IPaddr='" + ip + "';"
         results = querydb(sql)
         for name in results:
             nam="%10s" % name[0]
@@ -212,9 +212,9 @@ def db_command(sql):
 ###################################################################
 def db_insert(user, pw, first, last, sex, deviceName, ipAddr, macAddr):
 	fullName=first + last
-	db_command("INSERT into Persons(LastName, FirstName, FullName, Sex) values(%s,%s,%s,%s);" % (last, first, fullName, sex))
+	db_command("INSERT into Persons(LastName, FirstName, Gender) values(%s,%s,%s,%s);" % (last, first, fullName, sex))
 	# detemine the owen of this 
-	owner=fetch_fcol("select ID from Persons where LastName=", last, " and FirstName=", first)
+	owner=fetch_fcol("select ID from Person where LastName=", last, " and FirstName=", first)
 	db_command("INSERT into User(Username, Password, Owner) values(",user, ",", pw, ",", owner, ");")
 	db_command("INSERT into Addr(DeviceName, Owner, IPaddr, MacAddr) values(", deviceName, ",", owner, ",", ipAddr, ",", macAddr, ");")
 
