@@ -8,24 +8,24 @@ ips=cqdb.ip_all()
 connected = [""]
 for ip in ips:
     connected.append(ip)
-cqdb.printname_ip(connected)
+#cqdb.printname_ip(connected)
 
 ips=cqdb.keyip_all()
 connected = [""]
 for ip in ips:
     connected.append(ip)
-cqdb.printname_ip(connected)
+#cqdb.printname_ip(connected)
 
-name=cqdb.ip2name(ips[3])
-print "iptoname " 
-print name
-print "-------"
+#name=cqdb.ip2name(ips[3])
+#print "iptoname " 
+#print name
+#print "-------"
 
-pw="oot"
-usr="ot"
+pw="iamycx"
+usr="cyanjin"
 email="chaunceyyann@gmail.com"
-email2="comprepair3@gmail.com"
-epw="Siypfppt"
+email2="chaunceyyann@gmail.com"
+epw="iamycx"
 print cqdb.check_usrpw(usr,pw)
 print cqdb.check_pw("User",pw)
 print cqdb.check_usr(usr)

@@ -120,26 +120,26 @@ def ip2name(ip):
 ###################################################################
 # print out the name from the database with a weird format
 ###################################################################
-def printname_ip(ips): 
-    c=0
-    s="     "
-    for ip in ips:
-        c+=1
-        sql = "select FirstName as Owner from Addr Left join Person on Person.ID=Owner where IPaddr='" + ip + "';"
-        results = querydb(sql)
-        for name in results:
-            nam="%10s" % name[0]
-            s += nam + ","
-    l="+----------"
-    line="----"
-    for i in range(0,c):
-        line += l 
-    line += "-+"
-    s=s[:-1]
-    print line
-    print s 
-
-
+#def printname_ip(ips): 
+#    c=0
+#    s="     "
+#    for ip in ips:
+#        c+=1
+#        sql = "select FirstName as Owner from Addr Left join Person on Person.ID=Owner where IPaddr='" + ip + "';"
+#        results = querydb(sql)
+#        for name in results:
+#            nam="%10s" % name[0]
+#            s += nam + ","
+#    l="+----------"
+#    line="----"
+#    for i in range(0,c):
+#        line += l 
+#    line += "-+"
+#    s=s[:-1]
+#    print line
+#    print s 
+#
+#
 ###################################################################
 #  username and password checking 
 ###################################################################
