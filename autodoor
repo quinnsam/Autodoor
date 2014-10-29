@@ -397,9 +397,9 @@ def main():
 	pid_file.close()
 
 	# Calibrate the Arduino
-	cali = Thread(target=calibrate)
-	cali.setDaemon(True)
-	cali.start()
+	#cali = Thread(target=calibrate)
+	#cali.setDaemon(True)
+	#cali.start()
 
 	# Spawn a dedicated thread for each IP in the database.
 	for ip in ips:
