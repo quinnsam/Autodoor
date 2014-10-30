@@ -14,12 +14,12 @@
 
 // Lock angle definitions
 #define LOCK        45
-#define UNLOCK      160
+#define UNLOCK      155
 
 // Time Definitions
 #define SYS_WAIT	2			// Short pasue to allow system to catch up	
 #define RUN_WAIT	500			// Time to wait before starting loop again
-#define CAL_WAIT	1500		        // Time to wait for the calibrator
+#define CAL_WAIT	2000		        // Time to wait for the calibrator
 #define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
 #define AFT_WAIT	800		        // Time to wait to allow door to complete its task
 
@@ -46,6 +46,7 @@ int led_pin = 10;       // LED connected to digital pin 13
 int servo_pin = 9;      //Digital pin to control the servo
 int pot_pin = A0; 		// analog pin used to connect the potentiometer
 int pot_val = -1;       // variable to read the value from the analog pin 
+int pot_mid = 300;
 int pot_lock = 0;
 int pot_unlock =0;
 int input;
@@ -70,10 +71,10 @@ void setup()
     Serial.begin(9600);
 
     // Pin to connet to the pi
-    pinMode(led_pin, OUTPUT);      // sets the digital pin as output
+    //pinMode(led_pin, OUTPUT);      // sets the digital pin as output
 
     // Set door sensor as an input
-    pinMode(door_pin, INPUT);
+    //pinMode(door_pin, INPUT);
 
     // Join the I2C bus as master
     Wire.begin();
@@ -87,6 +88,10 @@ void setup()
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   pinMode(Buzzer, OUTPUT);
+
+  errorTone();
+  unlocktone();
+  locktone();
 
 }
 
@@ -259,7 +264,16 @@ void WriteByte(uint8_t addr, uint8_t reg, byte data) {
 }
 
 void calibrate () {
+	if (analogRead(pot_pin) < pot_mid)
+		calibrate_unlock();
+	else
+		calibrate_lock();
+	
+}
+
+void calibrate_unlock () {
     //unlock the door to read the potvalue 
+    delay(CAL_WAIT);
     door.attach(9);
     door.write(UNLOCK);
     delay(CAL_WAIT);
@@ -269,8 +283,11 @@ void calibrate () {
     Serial.print("Defined unlock: ");
     Serial.println(pot_unlock);
     door.detach();
+}
 
+void calibrate_lock () {
     //lock the door to read the potvalue 
+    delay(CAL_WAIT);
     door.attach(9);
     door.write(LOCK);
     delay(CAL_WAIT);
