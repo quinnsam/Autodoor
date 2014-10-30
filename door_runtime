@@ -16,11 +16,9 @@ start_auto() {
 }
 
 # Check if autodoor is running or not
-if [ -f "$RUN/autodoor.pid" ]
-then
-    ps -p `cat "$RUN"/autodoor.pid` > /dev/null 2>&1
-    if [ $? == 1 ]
-    then
+if [ -f "$RUN/autodoor.pid" ]; then
+    ps -p `cat "$RUN"/autodoor.pid` > /dev/null 2>&1 
+	if [ $? == "1" ] ; then
 		start_auto
     fi
 else

@@ -5,64 +5,55 @@
  ******************************************************************************/
 #include <Wire.h>
 #include <Servo.h>
-
-// Possible sensor addresses (suffix correspond to DIP switch positions)
-#define SENSOR_ADDR_OFF_OFF  (0x26)
-#define SENSOR_ADDR_OFF_ON   (0x22)
-#define SENSOR_ADDR_ON_OFF   (0x24)
-#define SENSOR_ADDR_ON_ON    (0x20)
+#include "pitches.h"
 
 // Lock angle definitions
 #define LOCK        45
-#define UNLOCK      155
+#define UNLOCK      170
 
 // Time Definitions
 #define SYS_WAIT	2			// Short pasue to allow system to catch up	
 #define RUN_WAIT	500			// Time to wait before starting loop again
-#define CAL_WAIT	2000		        // Time to wait for the calibrator
+#define CAL_WAIT	1800		        // Time to wait for the calibrator
 #define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
-#define AFT_WAIT	800		        // Time to wait to allow door to complete its task
-
-#define trigPin 12
-#define echoPin 11
-int Buzzer = 8;
+#define AFT_WAIT	800		        // Time to wait to allow doorlock to complete its task
+#define ERR_WAIT	1000		        // Time to wait to redo after ERROR
+#define STAT_WAIT	100		        // Time to wait to redo befro read the pot in lock_status()
 
 // Functions declarations
-extern int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data);
-extern void WriteByte(uint8_t addr, uint8_t reg, byte data);
+
 extern int lock_status();
 extern int lock(int lock_pos);
 extern void print_info();
 extern void calibrate();
+extern void calibrate_unlock();
+extern void calibrate_lock();
 extern int door_position();
 
+// Varial declearation
+int input;                // input variable from serial
+int stat;                 // Variable for lock status
+//int led_pin = 10;       // LED connected to digital pin 13
+int servo_pin = 9;        // Digital pin to control the servo
+int pot_pin = A0; 	  // analog pin used to connect the potentiometer
+int pot_val = -1;         // variable to read the value from the analog pin 
+int pot_mid = 300;        // pot variable for calibrate bidirectional
+int pot_lock = 0;         // pot value for lock
+int pot_unlock = 0;       // pot value for unlock
+int pot_tole = 50;        // pot variable for pot tolerance
+int trigPin = 12;         // Ultrasonic sensor trig singal out 
+int echoPin = 11;         // ultrasonic sensor echo singal in 
+int duration, distance;   // Ultrasonic unlock sensor
+int Buzzer = 8;           // buzzer pin
+int MelodyPin = 8;        // buzzer pin 
+int door_pin = 2;         // door detector pin
+int door_sensor = -1;     // door detector value
+int gc = 0;               // global counter
 
-//Prototypes
-//int lock(int);
-
-// Set the sensor address here
-const uint8_t sensorAddr = SENSOR_ADDR_OFF_OFF;
-int led_pin = 10;       // LED connected to digital pin 13
-int servo_pin = 9;      //Digital pin to control the servo
-int pot_pin = A0; 		// analog pin used to connect the potentiometer
-int pot_val = -1;       // variable to read the value from the analog pin 
-int pot_mid = 300;
-int pot_lock = 0;
-int pot_unlock =0;
-int input;
-int door_pin = 2;
-
-//global counter
-int gc = 0;
-int led_cool[2] = {255, 0};
-int door_sensor = -1;
+int led_cool[2] = {255, 0}; 
 
 // Servo Object
 Servo door;
-
-// Ultrasonic unlock sensor
-int duration, distance;
-
 
 // One-time setup
 void setup()
@@ -78,27 +69,22 @@ void setup()
 
     // Join the I2C bus as master
     Wire.begin();
-
-    // Adrress for the proximity sensor 
-    //WriteByte(sensorAddr, 0x3, 0xFE);
-
-	// Calibrates the definitions of the potentiometer values
-    calibrate();
     
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  pinMode(Buzzer, OUTPUT);
-
-  errorTone();
-  unlocktone();
-  locktone();
+    mario();
+    
+    // Calibrates the definitions of the potentiometer values
+    calibrate();
+    if (pot_unlock > 450)
+      calibrate();
+      
+    pinMode(trigPin, OUTPUT);
+    pinMode(echoPin, INPUT);
+    pinMode(Buzzer, OUTPUT);
 
 }
 
 // Main program loop
 void loop() {
-    int stat;
-
     //Beginig Serial monitoring
     if (Serial.available() > 0) {
         input = Serial.read();
@@ -107,7 +93,7 @@ void loop() {
                 if (lock(1) != 1) {
                     Serial.println("ERROR: Could not execute command LOCK");
                     errorTone();
-                    delay(1000);
+                    delay(ERR_WAIT);
                     if (lock(1) != 1) {
                     Serial.println("ERROR: Could not execute command LOCK");
                     errorTone();
@@ -115,11 +101,11 @@ void loop() {
                 }
             } else if ( input == '0') {
                 if (lock(0) != 0) {
-                    Serial.println("ERROR: Could not execute command UNLOCK");
+                    Serial.println("ERROR: Could not execute command UNLOCK.");
                     errorTone();
-                    delay(1000);
+                    delay(ERR_WAIT);
                     if (lock(0) != 0) {
-                    Serial.println("ERROR: Could not execute command UNLOCK");
+                    Serial.println("ERROR: Could not execute command UNLOCK twice.");
                     errorTone();
                     }
                 }
@@ -144,101 +130,50 @@ void loop() {
         }
     }
 
-    // Get the value from the sensor
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(2000);
-  digitalWrite(trigPin, LOW);
-  duration = pulseIn(echoPin, HIGH);
-  distance = (duration/2) / 29.1;
+    // Get the distance value from the ultrasonic sensor
+    digitalWrite(trigPin, HIGH);         // transmit sound wave out
+    delayMicroseconds(2000);             // transmit last 2 ms
+    digitalWrite(trigPin, LOW);          // stop transmit
+    duration = pulseIn(echoPin, HIGH);   // read from echo pin for travel duration
+    distance = (duration/2) / 29.1;      // calculate distance
   
   
-  if (distance >= 10 || distance <= 0){
-    //Serial.println("no object detected");
-    digitalWrite(Buzzer, LOW);
-  }
-  else { // unlock the door
-    if (lock(0) != 0) {
-      Serial.println("ERROR: Could not execute command UNLOCK");
-      errorTone();
-      delay(1000);
+    if (distance >= 10 || distance <= 0){
+      //Serial.println("no object detected");
+      digitalWrite(Buzzer, LOW);         // do nothing 
+    }else {                              // unlock the door
       if (lock(0) != 0) {
-      Serial.println("ERROR: Could not execute command UNLOCK");
-      errorTone();
+        Serial.println("ERROR: Could not execute command UNLOCK");
+        errorTone();
+        delay(ERR_WAIT);
+        if (lock(0) != 0) {
+          Serial.println("ERROR: Could not execute command UNLOCK");
+          errorTone();
+        }
       }
+      delay(AFT_WAIT);
     }
-  }
-
-    //Begin proximity monitoring
-    // 1. Connect one end of the cable into either Molex connectors on the sensor
-    //Connect the other end of the cable to the Arduino board:
-    //RED: 5V
-    //WHITE:  I2C SDA (pin A4 on Uno; pin 20 on Mega)
-    //BLACK: GND
-    //GREY: I2C SCL (pin A5 on Uno; pin 21 on Mega)
-    //Set the DIP switch on the sensor to set the sensor address (check back of sensor for possible addresses)
-    // Varible to store proximity data in
-    //uint8_t val;
-
-//    if (ReadByte(sensorAddr, 0x0, &val) == 0) {
-//        /* The second LSB indicates if something was not detected, i.e.,
-//           LO = object detected, HI = nothing detected */
-//        if (val & 0x2) {
-//            //Serial.println("Nothing detected");
-//            delay(SYS_WAIT);
-//        } else {
-//            Serial.println("Proximity Sensor: Object detected");
-//
-//            if (lock(0) != 0) {
-//                Serial.println("ERROR: Could not execute command UNLOCK");
-//            }
-//            delay(PRX_WAIT);
-//            if (lock(1) != 1) {
-//                Serial.println("ERROR: Could not execute command LOCK");
-//            }
-//
-//            delay(SYS_WAIT);
-//        }
-//    } else {
-//        Serial.println("Failed to read from sensor");
-//    }
 
     // check if the door is unlocked. 
     // lock it after about 15 (30*0.5) seconds 
     // if no more interaction detected.
     if (lock_status() != 1){
-        if ( gc >= 30 ){
-            lock(1);
-        } else {
-            gc++;
-        }
+      
+      // Check wheater the door is open or closed using the Magetic door sensor.
+      // Waits till the door is closed before locking.
+      //while (door_position() == 0);
+    
+      if ( gc >= 30 ){
+        lock(1);
+      } else {
+        gc++;
+      }
     } else {
       gc = 0;
     }
-
-    // Check wheater the door is open or closed using the Magetic door sensor.
-    //door_position();
-
+ 
     // Run again in 0.5 s (500 ms)
     delay(RUN_WAIT);
-}
-
-// Read a byte on the i2c interface
-int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data) {
-    // Do an i2c write to set the register that we want to read from
-    Wire.beginTransmission(addr);
-    Wire.write(reg);
-    Wire.endTransmission();
-
-    // Read a byte from the device
-    Wire.requestFrom(addr, (uint8_t)1);
-    if (Wire.available()) {
-        *data = Wire.read();
-    } else {
-        // Read nothing back
-        return -1;
-    }
-
-    return 0;
 }
 
 // Returns the position of the door.
@@ -246,57 +181,41 @@ int door_position() {
     return digitalRead(door_pin);
 }
 
-
-
-// Write a byte on the i2c interface
-void WriteByte(uint8_t addr, uint8_t reg, byte data) {
-    // Begin the write sequence
-    Wire.beginTransmission(addr);
-
-    // First byte is to set the register pointer
-    Wire.write(reg);
-
-    // Write the data byte
-    Wire.write(data);
-
-    // End the write sequence; bytes are actually transmitted now
-    Wire.endTransmission();
-}
-
-void calibrate () {
-	if (analogRead(pot_pin) < pot_mid)
-		calibrate_unlock();
-	else
-		calibrate_lock();
-	
+void calibrate() {
+  if (analogRead(pot_pin) < pot_mid) {
+    calibrate_unlock();
+    calibrate_lock();
+  } else {
+    calibrate_lock();
+    calibrate_unlock();
+    calibrate_lock();
+  }
 }
 
 void calibrate_unlock () {
     //unlock the door to read the potvalue 
-    delay(CAL_WAIT);
     door.attach(9);
     door.write(UNLOCK);
     delay(CAL_WAIT);
+    door.detach();
     // read the value of the potentiometer
     pot_unlock = analogRead(pot_pin); 
     // print out the value to the serial monitor
     Serial.print("Defined unlock: ");
     Serial.println(pot_unlock);
-    door.detach();
 }
 
 void calibrate_lock () {
     //lock the door to read the potvalue 
-    delay(CAL_WAIT);
     door.attach(9);
     door.write(LOCK);
     delay(CAL_WAIT);
+    door.detach();
     // read the value of the potentiometer
     pot_lock = analogRead(pot_pin); 
     // print out the value to the serial monitor
     Serial.print("Defined lock: ");
     Serial.println(pot_lock);
-    door.detach();
 }
 
 /******************************************************************************
@@ -312,45 +231,21 @@ void calibrate_lock () {
  ******************************************************************************/
 int lock_status() {
     int rv = -1;
+    
+    delay(STAT_WAIT);              // prevent it from reading bad value
+    pot_val = analogRead(pot_pin); // read the value of the potentiometer
 
-	pot_val = analogRead(pot_pin); // read the value of the potentiometer
-
-    //print_info();
-
-    if(pot_val > (pot_lock -15) && pot_val < (pot_lock + 15)){
-		
-        rv = 1;
-    } else if(pot_val > (pot_unlock -15) && pot_val < (pot_unlock + 15)) {
+    print_info();
+    
+    if(pot_val > (pot_lock - pot_tole) && pot_val < (pot_lock + pot_tole)){
+	rv = 1;
+    } else if(pot_val > (pot_unlock - pot_tole) && pot_val < (pot_unlock + pot_tole)) {
         rv = 0;
     } else {
         rv = -1;
     }
-	
-	// Turns on the door led light when the door is unlocked
-    if (rv == 0) {
-        //digitalWrite(led_pin, HIGH);   // sets the LED on
-		analogWrite(led_pin,led_cool[0]);
-		if(led_cool[1]){
-			led_cool[0] = led_cool[0] + 5;  
-			if (led_cool[0] >= 255) {
-				led_cool[1] = 0;
-				led_cool[0] = 255;
-			}
-		} else {
-			led_cool[0] = led_cool[0] - 5;
-			if (led_cool[0] <= 0) {
-				led_cool[1] = 1;
-				led_cool[0] = 0;
-			}
-		}
-
-    } else {
-        //digitalWrite(led_pin, LOW);    // sets the LED off
-		analogWrite(led_pin, 0);    // sets the LED off
-		led_cool[0] = 255;
-    }
-
-	return rv;
+    
+    return rv;
 }
 
 /******************************************************************************
@@ -369,8 +264,12 @@ void print_info() {
 
     //print out the value to the serial monitor
 
-    Serial.print("Potent: ");
+    Serial.print("pot_val: ");
     Serial.println(pot_val);
+    Serial.print("pot_unlock: ");
+    Serial.println(pot_unlock);
+    Serial.print("pot_lock: ");
+    Serial.println(pot_lock);
 
 }
 
@@ -390,7 +289,7 @@ int lock(int lock_pos) {
 
     int l_status = lock_status();
     int angle;
-    //int door_open = 1;
+    
     if (lock_pos == 1) {
         Serial.println("----LOCKING----");
     } else if (lock_pos == 0) {
@@ -404,7 +303,7 @@ int lock(int lock_pos) {
         Serial.println("ALREADY ins desired state.");
         return lock_pos;
     } else {
-        //print_info();
+        print_info();
         if (lock_pos == 1) {
             angle = LOCK;
         } else if (lock_pos == 0) {
@@ -414,30 +313,49 @@ int lock(int lock_pos) {
 
     // set the servo position  
     if (angle == LOCK) {
-        // Waits till the door is closed before locking.
-	//	while (door_open == 1) {
-          //  if (door_position() == 1) {
-            //    delay(DSR_WAIT);
-                door.attach(9);
-                door.write(LOCK);
-                locktone();
-             //   door_open = 0;
-            //} else {
-             //   continue;
-            //}
-       // }
-	// No need to wait for the door to close to unlock
+        door.attach(9);
+        door.write(LOCK);
+        locktone();
     } else {
         door.attach(9);
         door.write(UNLOCK);
         unlocktone();
     }
-	delay(AFT_WAIT);
+    delay(AFT_WAIT);
     // Detach servo so manual override of the door can take place
     door.detach();
 
     return lock_status();
 }
+
+
+void melodyTone() {
+  // notes in the melody:
+  int melody[] = {
+  NOTE_C4, NOTE_G3,NOTE_G3, NOTE_A3, NOTE_G3,0, NOTE_B3, NOTE_C4};
+
+  // note durations: 4 = quarter note, 8 = eighth note, etc.:
+  int noteDurations[] = { 4, 8, 8, 4,4,4,4,4 };
+  
+  // iterate over the notes of the melody:
+  for (int thisNote = 0; thisNote < 8; thisNote++) {
+    
+    // to calculate the note duration, take one second 
+    // divided by the note type.
+    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+    int noteDuration = 1000/noteDurations[thisNote];
+    tone(8, melody[thisNote],noteDuration);
+
+    // to distinguish the notes, set a minimum time between them.
+    // the note's duration + 30% seems to work well:
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    
+    // stop the tone playing:
+    noTone(8);
+  }
+}
+
 void unlocktone(){ // keep these two funtion under 1000 ms
     tone(Buzzer, 800);          // play 400 Hz tone for 500 ms
     delay(250);
@@ -466,4 +384,179 @@ void errorTone(){
    tone(Buzzer, 600);
    delay(100);
    noTone(Buzzer); 
-}
+//}
+//void mario(){
+// int melody[] = {
+//  NOTE_E7, NOTE_E7, 0, NOTE_E7,
+//  0, NOTE_C7, NOTE_E7, 0,
+//  NOTE_G7, 0, 0,  0,
+//  NOTE_G6, 0, 0, 0,
+// 
+//  NOTE_C7, 0, 0, NOTE_G6,
+//  0, 0, NOTE_E6, 0,
+//  0, NOTE_A6, 0, NOTE_B6,
+//  0, NOTE_AS6, NOTE_A6, 0,
+// 
+//  NOTE_G6, NOTE_E7, NOTE_G7,
+//  NOTE_A7, 0, NOTE_F7, NOTE_G7,
+//  0, NOTE_E7, 0, NOTE_C7,
+//  NOTE_D7, NOTE_B6, 0, 0,
+// 
+//  NOTE_C7, 0, 0, NOTE_G6,
+//  0, 0, NOTE_E6, 0,
+//  0, NOTE_A6, 0, NOTE_B6,
+//  0, NOTE_AS6, NOTE_A6, 0,
+// 
+//  NOTE_G6, NOTE_E7, NOTE_G7,
+//  NOTE_A7, 0, NOTE_F7, NOTE_G7,
+//  0, NOTE_E7, 0, NOTE_C7,
+//  NOTE_D7, NOTE_B6, 0, 0
+//};
+////Mario main them tempo
+//int tempo[] = {
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+// 
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+// 
+//  9, 9, 9,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+// 
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+// 
+//  9, 9, 9,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+//  12, 12, 12, 12,
+//};
+////Underworld melody
+//int underworld_melody[] = {
+//  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
+//  NOTE_AS3, NOTE_AS4, 0,
+//  0,
+//  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
+//  NOTE_AS3, NOTE_AS4, 0,
+//  0,
+//  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
+//  NOTE_DS3, NOTE_DS4, 0,
+//  0,
+//  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
+//  NOTE_DS3, NOTE_DS4, 0,
+//  0, NOTE_DS4, NOTE_CS4, NOTE_D4,
+//  NOTE_CS4, NOTE_DS4,
+//  NOTE_DS4, NOTE_GS3,
+//  NOTE_G3, NOTE_CS4,
+//  NOTE_C4, NOTE_FS4, NOTE_F4, NOTE_E3, NOTE_AS4, NOTE_A4,
+//  NOTE_GS4, NOTE_DS4, NOTE_B3,
+//  NOTE_AS3, NOTE_A3, NOTE_GS3,
+//  0, 0, 0
+//};
+////Underwolrd tempo
+//int underworld_tempo[] = {
+//  12, 12, 12, 12,
+//  12, 12, 6,
+//  3,
+//  12, 12, 12, 12,
+//  12, 12, 6,
+//  3,
+//  12, 12, 12, 12,
+//  12, 12, 6,
+//  3,
+//  12, 12, 12, 12,
+//  12, 12, 6,
+//  6, 18, 18, 18,
+//  6, 6,
+//  6, 6,
+//  6, 6,
+//  18, 18, 18, 18, 18, 18,
+//  10, 10, 10,
+//  10, 10, 10,
+//  3, 3, 3
+//};
+// 
+//  pinMode(13, OUTPUT);//led indicator when singing a note
+// 
+//  int song = 0;
+//  //sing the tunes
+//  sing(1);
+//  sing(1);
+//  sing(2);
+//}
+// 
+//void sing(int s) {
+//  // iterate over the notes of the melody:
+//  song = s;
+//  if (song == 2) {
+//    Serial.println(" 'Underworld Theme'");
+//    int size = sizeof(underworld_melody) / sizeof(int);
+//    for (int thisNote = 0; thisNote < size; thisNote++) {
+// 
+//      // to calculate the note duration, take one second
+//      // divided by the note type.
+//      //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+//      int noteDuration = 1000 / underworld_tempo[thisNote];
+// 
+//      buzz(melodyPin, underworld_melody[thisNote], noteDuration);
+// 
+//      // to distinguish the notes, set a minimum time between them.
+//      // the note's duration + 30% seems to work well:
+//      int pauseBetweenNotes = noteDuration * 1.30;
+//      delay(pauseBetweenNotes);
+// 
+//      // stop the tone playing:
+//      buzz(melodyPin, 0, noteDuration);
+// 
+//    }
+// 
+//  } else {
+// 
+//    Serial.println(" 'Mario Theme'");
+//    int size = sizeof(melody) / sizeof(int);
+//    for (int thisNote = 0; thisNote < size; thisNote++) {
+// 
+//      // to calculate the note duration, take one second
+//      // divided by the note type.
+//      //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+//      int noteDuration = 1000 / tempo[thisNote];
+// 
+//      buzz(melodyPin, melody[thisNote], noteDuration);
+// 
+//      // to distinguish the notes, set a minimum time between them.
+//      // the note's duration + 30% seems to work well:
+//      int pauseBetweenNotes = noteDuration * 1.30;
+//      delay(pauseBetweenNotes);
+// 
+//      // stop the tone playing:
+//      buzz(melodyPin, 0, noteDuration);
+// 
+//    }
+//  }
+//}
+// 
+//void buzz(int targetPin, long frequency, long length) {
+//  digitalWrite(13, HIGH);
+//  long delayValue = 1000000 / frequency / 2; // calculate the delay value between transitions
+//  //// 1 second's worth of microseconds, divided by the frequency, then split in half since
+//  //// there are two phases to each cycle
+//  long numCycles = frequency * length / 1000; // calculate the number of cycles for proper timing
+//  //// multiply frequency, which is really cycles per second, by the number of seconds to
+//  //// get the total number of cycles to produce
+//  for (long i = 0; i < numCycles; i++) { // for the calculated length of time...
+//    digitalWrite(targetPin, HIGH); // write the buzzer pin high to push out the diaphram
+//    delayMicroseconds(delayValue); // wait for the calculated delay value
+//    digitalWrite(targetPin, LOW); // write the buzzer pin low to pull back the diaphram
+//    delayMicroseconds(delayValue); // wait again or the calculated delay value
+//  }
+//  digitalWrite(13, LOW);
+// 
+//} 
