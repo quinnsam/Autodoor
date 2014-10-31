@@ -12,7 +12,7 @@
 #define UNLOCK          170
 
 // Time Definitions
-#define SYS_WAIT	2			// Short pasue to allow system to catch up	
+#define SYS_WAIT	1000			// Short pasue to allow system to catch up	
 #define RUN_WAIT	500			// Time to wait before starting loop again
 #define CAL_WAIT	1800		        // Time to wait for the calibrator
 #define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
@@ -28,14 +28,12 @@ extern void print_info();
 extern void calibrate();
 extern void calibrate_unlock();
 extern void calibrate_lock();
-extern int door_position();
+//extern int door_position();
 extern void melodyTone();
-extern void mario();
-extern void buzz(int targetPin, long frequency, long length);
 
 // Varial declearation
 
-int input;                // input variable from serial
+int input = 1;                // input variable from serial
 int stat;                 // Variable for lock status
 //int led_pin = 10;       // LED connected to digital pin 13
 int servo_pin = 9;        // Digital pin to control the servo
@@ -79,14 +77,13 @@ void setup()
     pinMode(13, OUTPUT);    //led indicator when singing a note
     
     melodyTone();
-    mario();
     
     // Calibrates the definitions of the potentiometer values
     calibrate();
-    if (pot_unlock > 450)
+    if (pot_unlock > 470)
       calibrate();
       
-
+    delay(SYS_WAIT);
 
 }
 
@@ -143,12 +140,13 @@ void loop() {
     digitalWrite(trigPin, LOW);          // stop transmit
     duration = pulseIn(echoPin, HIGH);   // read from echo pin for travel duration
     distance = (duration/2) / 29.1;      // calculate distance
-  
-  
-    if (distance >= 10 || distance <= 0){
+
+    if (distance >= 15 || distance <= 0){
       //Serial.println("no object detected");
       digitalWrite(Buzzer, LOW);         // do nothing 
-    }else {                              // unlock the door
+    }else {
+      Serial.println("Object detected");      // unlock the door
+      
       if (lock(0) != 0) {
         Serial.println("ERROR: Could not execute command UNLOCK");
         errorTone();
@@ -244,7 +242,7 @@ int lock_status() {
     delay(STAT_WAIT);              // prevent it from reading bad value
     pot_val = analogRead(pot_pin); // read the value of the potentiometer
 
-    print_info();
+    //print_info();
     
     if(pot_val > (pot_lock - pot_tole) && pot_val < (pot_lock + pot_tole)){
 	rv = 1;
@@ -312,7 +310,7 @@ int lock(int lock_pos) {
         Serial.println("ALREADY ins desired state.");
         return lock_pos;
     } else {
-        print_info();
+        //print_info();
         if (lock_pos == 1) {
             angle = LOCK;
         } else if (lock_pos == 0) {
@@ -394,153 +392,3 @@ void errorTone(){
    delay(100);
    noTone(Buzzer); 
 }
-void mario(){
- int melody[] = {
-  NOTE_E7, NOTE_E7, 0, NOTE_E7,
-  0, NOTE_C7, NOTE_E7, 0,
-  NOTE_G7, 0, 0,  0,
-  NOTE_G6, 0, 0, 0,
- 
-  NOTE_C7, 0, 0, NOTE_G6,
-  0, 0, NOTE_E6, 0,
-  0, NOTE_A6, 0, NOTE_B6,
-  0, NOTE_AS6, NOTE_A6, 0,
- 
-  NOTE_G6, NOTE_E7, NOTE_G7,
-  NOTE_A7, 0, NOTE_F7, NOTE_G7,
-  0, NOTE_E7, 0, NOTE_C7,
-  NOTE_D7, NOTE_B6, 0, 0,
- 
-  NOTE_C7, 0, 0, NOTE_G6,
-  0, 0, NOTE_E6, 0,
-  0, NOTE_A6, 0, NOTE_B6,
-  0, NOTE_AS6, NOTE_A6, 0,
- 
-  NOTE_G6, NOTE_E7, NOTE_G7,
-  NOTE_A7, 0, NOTE_F7, NOTE_G7,
-  0, NOTE_E7, 0, NOTE_C7,
-  NOTE_D7, NOTE_B6, 0, 0
-};
-//Mario main them tempo
-int tempo[] = {
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
- 
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
- 
-  9, 9, 9,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
- 
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
- 
-  9, 9, 9,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-};
-//Underworld melody
-int underworld_melody[] = {
-  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
-  NOTE_AS3, NOTE_AS4, 0,
-  0,
-  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
-  NOTE_AS3, NOTE_AS4, 0,
-  0,
-  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
-  NOTE_DS3, NOTE_DS4, 0,
-  0,
-  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
-  NOTE_DS3, NOTE_DS4, 0,
-  0, NOTE_DS4, NOTE_CS4, NOTE_D4,
-  NOTE_CS4, NOTE_DS4,
-  NOTE_DS4, NOTE_GS3,
-  NOTE_G3, NOTE_CS4,
-  NOTE_C4, NOTE_FS4, NOTE_F4, NOTE_E3, NOTE_AS4, NOTE_A4,
-  NOTE_GS4, NOTE_DS4, NOTE_B3,
-  NOTE_AS3, NOTE_A3, NOTE_GS3,
-  0, 0, 0
-};
-//Underwolrd tempo
-int underworld_tempo[] = {
-  12, 12, 12, 12,
-  12, 12, 6,
-  3,
-  12, 12, 12, 12,
-  12, 12, 6,
-  3,
-  12, 12, 12, 12,
-  12, 12, 6,
-  3,
-  12, 12, 12, 12,
-  12, 12, 6,
-  6, 18, 18, 18,
-  6, 6,
-  6, 6,
-  6, 6,
-  18, 18, 18, 18, 18, 18,
-  10, 10, 10,
-  10, 10, 10,
-  3, 3, 3
-};
- 
- 
-  //sing the tunes
-  Serial.println(" 'Mario Theme'");
-  int size = sizeof(melody) / sizeof(int);
-  for (int thisNote = 0; thisNote < size; thisNote++) {
- 
-    // to calculate the note duration, take one second
-    // divided by the note type.
-    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-    int noteDuration = 1000 / tempo[thisNote];
- 
-    buzz(Buzzer, melody[thisNote], noteDuration);
- 
-    // to distinguish the notes, set a minimum time between them.
-    // the note's duration + 30% seems to work well:
-    int pauseBetweenNotes = noteDuration * 1.30;
-    delay(pauseBetweenNotes);
- 
-    // stop the tone playing:
-    buzz(Buzzer, 0, noteDuration);
- 
-  }
-  
-  Serial.println(" 'Underworld Theme'");
-  size = sizeof(underworld_melody) / sizeof(int);
-    for (int thisNote = 0; thisNote < size; thisNote++) {
- 
-      // to calculate the note duration, take one second
-      // divided by the note type.
-      //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-      int noteDuration = 1000 / underworld_tempo[thisNote];
- 
-      buzz(Buzzer, underworld_melody[thisNote], noteDuration);
- 
-      // to distinguish the notes, set a minimum time between them.
-      // the note's duration + 30% seems to work well:
-      int pauseBetweenNotes = noteDuration * 1.30;
-      delay(pauseBetweenNotes);
- 
-      // stop the tone playing:
-      buzz(Buzzer, 0, noteDuration);
-    }
- 
-}
-
-void buzz(int targetPin, int frequency, int length) {
-  digitalWrite(13, HIGH);
-  tone (targetPin, frequency, length);
-  digitalWrite(13, LOW);
- 
-} 
