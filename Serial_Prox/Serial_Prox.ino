@@ -49,7 +49,7 @@ int duration, distance;   // Ultrasonic unlock sensor
 int Buzzer = 8;           // buzzer pin
 int door_pin = 2;         // door detector pin
 int door_sensor = -1;     // door detector value
-int gc = 0;               // global counter
+int gc = 30;              // global counter
 
 int led_cool[2] = {255, 0}; 
 
@@ -80,7 +80,7 @@ void setup()
     
     // Calibrates the definitions of the potentiometer values
     calibrate();
-    if (pot_unlock > 470)
+    if (pot_unlock > 475)
       calibrate();
       
     delay(SYS_WAIT);
@@ -135,11 +135,18 @@ void loop() {
     }
 
     // Get the distance value from the ultrasonic sensor
+    // issue : the first value will be really small
     digitalWrite(trigPin, HIGH);         // transmit sound wave out
-    delayMicroseconds(2000);             // transmit last 2 ms
+    delayMicroseconds(10);             	 // transmit last 10 uS
     digitalWrite(trigPin, LOW);          // stop transmit
     duration = pulseIn(echoPin, HIGH);   // read from echo pin for travel duration
     distance = (duration/2) / 29.1;      // calculate distance
+    // trying to solve the issue above
+    
+    if ( gc == 30 )
+      distance = 15;
+//  S erial.print("Dis ");
+//  Serial.println(distance);
 
     if (distance >= 15 || distance <= 0){
       //Serial.println("no object detected");
