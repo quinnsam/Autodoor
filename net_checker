@@ -1,15 +1,27 @@
 #!/bin/bash
 # Check if connected to the internet
 ping -c 2 -w 2 google.com > /dev/null 2>&1 
-if [ $? == 1 ]
+if [ $? != 0 ]
 then
-	ping -c 2 -w 2 google.com > /dev/null 2>&1 
-	if [ $? == 1 ]
+	ping -c 2 -w 2 8.8.8.8 > /dev/null 2>&1 
+	if [ $? != 0 ]
 	then
+
 		echo "##############################**Net-Checker**#############################"
-		date
-		echo "Not connected to the Interwebs, Rebooting"
-	    reboot
+		date >> /var/run/net_checker.run
+        lines=$(cat /var/run/netchecker.run | wc -l)
+        if [[ $lines -lt 3 ]]
+        then
+            echo "Not connected to the Interwebs, Rebooting"
+            sudo ifdown --force wlan0
+            sleep 10
+            sudo ifup wlan0
+        fi
 	fi
+else
+    if [ -e /var/run/net_checker.run ]
+    then
+        rm -f /var/run/net_checker.run
+    fi
 fi
 

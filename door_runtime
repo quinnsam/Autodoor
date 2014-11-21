@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Location of the autodoor program
-AUTO='/home/pi/Autodoor/autodoor'
+AUTO='/home/door/Autodoor/autodoor'
 
 # Location of the run/pid folder
-RUN='/home/pi/Autodoor/run'
+RUN='/home/door/Autodoor/run'
 
 # Kills any tmux 0 session and starts teh Autodoor program in tmux 0
 start_auto() {
@@ -13,7 +13,7 @@ start_auto() {
 	echo "Autodoor is not running starting it now."
 	tmux kill-session -t auto > /dev/null 2>&1
 	tmux kill-session -t chome > /dev/null 2>&1
-    tmux new -s auto -d $AUTO
+    tmux new -s auto -d "$AUTO 2> /home/door/logs/autodoor.err"
 }
 
 # Check if autodoor is running or not

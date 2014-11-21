@@ -12,13 +12,13 @@ import subprocess
 import serial
 import os
 import RPi.GPIO as GPIO
-import cqdb 
+#import cqdb 
 from Queue import Queue
 import signal
 import socket
 import select
 from xml.dom import minidom
-import verify 
+import helper
 import sys
 import getopt
 
@@ -27,19 +27,17 @@ import getopt
 # Signal handler 
 ###############################################################################
 def handler(signum, frame):
-	print 'Entered Sighandler'
-	# Disconneting from mysql server
-	print_stats()
-	cqdb.db_close()
-	sys.exit()
+    print 'Entered Sighandler'
+    print_stats()
+    sys.exit()
 
 ###############################################################################
 # Usage 
 ###############################################################################
 def usage():
-	print "Autodoor [th][help]"
-	print '		-t 			Test mode will not actually comunicate with the door.'
-	print '		-h, --help	Print the usage message'
+    print "Autodoor [th][help]"
+    print '		-t 			Test mode will not actually comunicate with the door.'
+    print '		-h, --help	Print the usage message'
 
 ###############################################################################
 # Setting Global varibles and environment.
@@ -49,7 +47,7 @@ lock_status = 0
 night_lock = 0
 arduino = serial.Serial('/dev/ttyUSB0', 9600)
 queue = Queue()
-ips=cqdb.keyip_all()
+ips= ['10.0.0.70', '10.0.0.24']
 #------------------------------------------------------------------------------#
 signal.signal(signal.SIGHUP, handler)
 signal.signal(signal.SIGINT, handler)
@@ -71,25 +69,25 @@ test_mode = False
 #-----------------------------------------------------------------------------#
 # Class object for logging and users.
 class Log(object):
-	def __init__(self, name=str, ip=str):
-		self.mlock = 0
-		self.munlock = 0
-		self.mstatus = 0
-		self.mcalibrate = 0
-		self.mcon = 0
-		self.mname = name
-		self.mip = ip
+    def __init__(self, name=str, ip=str):
+        self.mlock = 0
+        self.munlock = 0
+        self.mstatus = 0
+        self.mcalibrate = 0
+        self.mcon = 0
+        self.mname = name
+        self.mip = ip
 
-	def lock(self):
-		self.mlock += 1
-	def unlock(self):
-		self.munlock += 1
-	def status(self):
-		self.mstatus += 1
-	def calibrate(self):
-		self.mcalibrate += 1
-	def conected(self):
-		self.mcon += 1
+    def lock(self):
+        self.mlock += 1
+    def unlock(self):
+        self.munlock += 1
+    def status(self):
+        self.mstatus += 1
+    def calibrate(self):
+        self.mcalibrate += 1
+    def conected(self):
+        self.mcon += 1
 
 log = [Log('term', 0), Log('glob', 0)]
 #-----------------------------------------------------------------------------#
@@ -98,65 +96,65 @@ log = [Log('term', 0), Log('glob', 0)]
 # Keeps track of all the Locks and Unlocks and where they originated from.
 ################################################################################
 def logger(opt):
-	global log
+    global log
 
-	if opt == '0':
-		log[0].unlock()
-	elif opt == '1':
-		log[0].lock()
-	elif opt == '2':
-		log[0].status()
-	elif opt == '3':
-		log[0].calibrate()
-	elif opt == '4':
-		log[0].connected()
+    if opt == '0':
+        log[0].unlock()
+    elif opt == '1':
+        log[0].lock()
+    elif opt == '2':
+        log[0].status()
+    elif opt == '3':
+        log[0].calibrate()
+    elif opt == '4':
+        log[0].connected()
 
 ###############################################################################
 # Prints the statistics from the logging function
 ###############################################################################
 def print_stats():
-	# Create a  log file for the session
-	global log
-	statfile = open('/home/pi/Autodoor/log/statistics.log', 'a')
-	p = subprocess.Popen(['tmux', 'list-sessions'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	out, err = p.communicate()
+    # Create a  log file for the session
+    global log
+    statfile = open('/home/pi/Autodoor/log/statistics.log', 'a')
+    p = subprocess.Popen(['tmux', 'list-sessions'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
 
-	statfile.write("###############################**Locks/Unlocks**###############################\n%s -- %s\n" % (datetime.datetime.now(), out))
-	statfile.write("Unlocks: %s\n" % log[1].munlock)
-	statfile.write("Locks: %s\n" % log[1].mlock)
-	statfile.write("###################################**Misc.**####################################\n")
-	statfile.write("Terminal Unlocks: %s\n" % log[0].munlock)
-	statfile.write("Terminal Locks: %s\n" % log[0].mlock)
-	statfile.write("Terminal Status: %s\n" % log[0].mstatus)
-	statfile.write("Terminal Calibrates: %s\n" % log[0].mcalibrate)
-	statfile.write("Terminal Users: %s\n" % log[0].mcon)
-	statfile.write("###################################**Users**####################################\n")
-	# Prints logging information for each user
-	for user in range(2,len(log)):
-		#print "user", user
-		statfile.write("%s: %s\n" % (log[user].mname, log[user].munlock))
+    statfile.write("###############################**Locks/Unlocks**###############################\n%s -- %s\n" % (datetime.datetime.now(), out))
+    statfile.write("Unlocks: %s\n" % log[1].munlock)
+    statfile.write("Locks: %s\n" % log[1].mlock)
+    statfile.write("###################################**Misc.**####################################\n")
+    statfile.write("Terminal Unlocks: %s\n" % log[0].munlock)
+    statfile.write("Terminal Locks: %s\n" % log[0].mlock)
+    statfile.write("Terminal Status: %s\n" % log[0].mstatus)
+    statfile.write("Terminal Calibrates: %s\n" % log[0].mcalibrate)
+    statfile.write("Terminal Users: %s\n" % log[0].mcon)
+    statfile.write("###################################**Users**####################################\n")
+    # Prints logging information for each user
+    for user in range(2,len(log)):
+        #print "user", user
+        statfile.write("%s: %s\n" % (log[user].mname, log[user].munlock))
 
-	statfile.close()
+    statfile.close()
 
 
 ###############################################################################
 # Pareses and sets varibles from commandline arguments.
 ###############################################################################
 try:
-	opts, args = getopt.getopt(sys.argv[1:], "ht", ["help"])
+    opts, args = getopt.getopt(sys.argv[1:], "ht", ["help"])
 except getopt.GetoptError as err:
-	# print help information and exit:
-	print str(err) # will print something like "option -a not recognized"
-	usage()
-	sys.exit(2)
+    # print help information and exit:
+    print str(err) # will print something like "option -a not recognized"
+    usage()
+    sys.exit(2)
 for o, a in opts:
-	if o == "-t":
-		test_mode = True
-	elif o in ("-h", "--help"):
-		usage()
-		sys.exit()
-	else:
-		assert False, "unhandled option"
+    if o == "-t":
+        test_mode = True
+    elif o in ("-h", "--help"):
+        usage()
+        sys.exit()
+    else:
+        assert False, "unhandled option"
 
 
 ###############################################################################
@@ -167,14 +165,14 @@ for o, a in opts:
 #
 ###############################################################################
 def lock():
-	global lock_status, log
-	if not test_mode:
-		arduino.write('1')
-		log[1].lock()
-		#print '+1 lock func'
-	else:
-		print 'TEST: Sent Arduino 1'
-	#lock_status = 1
+    global lock_status, log
+    if not test_mode:
+        arduino.write('1')
+        log[1].lock()
+        #print '+1 lock func'
+    else:
+        print 'TEST: Sent Arduino 1'
+    #lock_status = 1
 
 ###############################################################################
 # Sends a unlock request to the door to be unlocked
@@ -184,15 +182,22 @@ def lock():
 #
 ###############################################################################
 def unlock():
-	global lock_status, log
-	if not test_mode:
-		arduino.write('0')
-		log[1].unlock()
-		#print '+1 unlock func'
-	else:
-		print 'TEST: Sent Arduino 0'
-	#lock_status = 0
+    global lock_status, log
+    if not test_mode:
+        arduino.write('0')
+        log[1].unlock()
+        #print '+1 unlock func'
+    else:
+        print 'TEST: Sent Arduino 0'
+    #lock_status = 0
 
+def ip2name(ip):
+    if ip == '10.0.0.70':
+        return "Sam"
+    elif ip == '10.0.0.24':
+        return "Zach"
+    else:
+        return "UNKOWN"
 ###############################################################################
 # This is the main while loop that will continualy monitor for clients connecting
 # and disconnecting.
@@ -206,66 +211,65 @@ def unlock():
 #
 ###############################################################################
 def pinger(que):
-	global connected, ips
-	failed = 0
-	ip_mon = que.get()
-	try:
-		name = cqdb.ip2name(ip_mon)
-	except:
-		name = 'UNKNOWN'
+    global connected, ips
+    failed = 0
+    ip_mon = que.get()
 
-	if ip_mon == '':
-		return 1
+    if ip_mon == '':
+        return 1
 
-	# Creates a logging profile
-	index = len(log)
-	log.append(Log(name, ip_mon))
-	
-	# Set longer disconnect for certaint phones
-	if ip_mon == '10.0.0.72' or ip_mon == '10.0.0.54':
-		failed_max = 400
-	else:
-		# Default disconnect timeout
-		failed_max = 10 
+    name = ip2name(ip_mon)
 
-	print 'IP watcher started for: ', ip_mon
-	while True:
-		current_time = datetime.datetime.now() 
-		#print 'Time: ', current_time.hour
-		#print 'thread' , ip_mon
-		ret = subprocess.call("ping -c 2 -w 2 -n %s" % ip_mon,
-				shell=True,
-				stdout=open('/dev/null', 'w'),
-				stderr=subprocess.STDOUT)
 
-		if ret == 0:
-			if ip_mon in connected:
-				failed = 0
-				continue
-			elif current_time.hour > 5 and current_time.hour < 23:
-				connected.append(ip_mon)
-				print name, ' Has connected:', datetime.datetime.now() 
-				log[index].unlock()
-				if test_mode:
-					verify.mailer(name, 2)
-				unlock()
-				sleep(60)
-				lock()
-				sleep(10)
-				print_log = True
-			elif current_time.hour == 0 and print_log == True:
-				# Prints the stats from the logger every day
-				print_stats()
-				print_log = False
+    # Creates a logging profile
+    index = len(log)
+    log.append(Log(name, ip_mon))
 
-		else :
-			if ip_mon in connected:
-				failed = failed + 1
-				if failed > failed_max:
-					if test_mode:
-						verify.mailer(name, 3)
-					connected.remove(ip_mon)
-					print name, ' Disconnected:', datetime.datetime.now() 
+    # Set longer disconnect for certaint phones
+    if ip_mon == '10.0.0.72' or ip_mon == '10.0.0.54':
+        failed_max = 400
+    else:
+        # Default disconnect timeout
+        failed_max = 10
+
+    print 'IP watcher started for: ', ip_mon
+    while True:
+        current_time = datetime.datetime.now()
+        #print 'Time: ', current_time.hour
+        #print 'thread' , ip_mon
+        ret = subprocess.call("ping -c 2 -w 2 -n %s" % ip_mon,
+                shell=True,
+                stdout=open('/dev/null', 'w'),
+                stderr=subprocess.STDOUT)
+
+        if ret == 0:
+            if ip_mon in connected:
+                failed = 0
+                continue
+            elif current_time.hour > 5 and current_time.hour < 23:
+                connected.append(ip_mon)
+                print name, ' Has connected:', datetime.datetime.now()
+                log[index].unlock()
+                if test_mode:
+                    verify.mailer(name, 2)
+                unlock()
+                sleep(60)
+                lock()
+                sleep(10)
+                print_log = True
+            elif current_time.hour == 0 and print_log == True:
+                # Prints the stats from the logger every day
+                print_stats()
+                print_log = False
+
+        else :
+            if ip_mon in connected:
+                failed = failed + 1
+                if failed > failed_max:
+                    if test_mode:
+                        verify.mailer(name, 3)
+                    connected.remove(ip_mon)
+                    print name, ' Disconnected:', datetime.datetime.now() 
 
 ###############################################################################
 # Monitors the seiral comunication from the Arduino
@@ -274,19 +278,19 @@ def pinger(que):
 #
 ###############################################################################
 def arduino_watcher():
-	global lock_status
-	print 'Arduino watcher has spawned'
-	while True:
-		read = arduino.readline()
-		read = read.strip()
-		print read
-		if read == 'UNLOCKED':
-			print 'The door is unlocked'
-			lock_status = 0
-		elif read == 'LOCKED':
-			print 'The door is locked'
-			lock_status = 1
-		read = ""
+    global lock_status
+    print 'Arduino watcher has spawned'
+    while True:
+        read = arduino.readline()
+        read = read.strip()
+        print read
+        if read == 'UNLOCKED':
+            print 'The door is unlocked'
+            lock_status = 0
+        elif read == 'LOCKED':
+            print 'The door is locked'
+            lock_status = 1
+        read = ""
 
 ###############################################################################
 # Monitors the seiral comunication from the console. 
@@ -296,26 +300,23 @@ def arduino_watcher():
 #
 ###############################################################################
 def console_watcher():
-	print 'Console monitor has spawned'
-	while True:
-		console = raw_input()
-		console.strip()
-		if console == '0' or console == '1' or console == '2' or console == '3':
-			if not test_mode:
-				arduino.write(console)
-			else:
-				print 'TEST: Sent Arduino: ', console
-		elif console == '4':
-			#print connected
-			for user in connected:
-				try:
-					print cqdb.ip2name(user)
-				except:
-					print 'UNKNOWN', user
-		else:
-			print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate, 4-Connected.Clients]', console
+    print 'Console monitor has spawned'
+    while True:
+        console = raw_input()
+        console.strip()
+        if console == '0' or console == '1' or console == '2' or console == '3':
+            if not test_mode:
+                arduino.write(console)
+            else:
+                print 'TEST: Sent Arduino: ', console
+        elif console == '4':
+            #print connected
+            for user in connected:
+                print ip2name(user)
+        else:
+            print 'Error: invalid command [0-Unlock, 1-Lock, 2-Status, 3-Calibrate, 4-Connected.Clients]', console
 
-		logger(console)
+        logger(console)
 
 ###############################################################################
 # Perfomes the inital handshake between the connected socket and itself
@@ -326,35 +327,35 @@ def console_watcher():
 #
 ###############################################################################
 def handshake(client):
-	#print 'Entered handshake with:', client
-	try:
-		raw = client.recv(size)
-		raw = raw.strip()
-	except:
-		return 2 
+    #print 'Entered handshake with:', client
+    try:
+        raw = client.recv(size)
+        raw = raw.strip()
+    except:
+        return 2
 
-	#print 'Recived:', raw
+    #print 'Recived:', raw
 
-	try:
-		xmldoc = minidom.parseString(raw)
-	except:
-		return 3
-	request = xmldoc.getElementsByTagName('type')[0].firstChild.data
-	user = xmldoc.getElementsByTagName('user')[0].firstChild.data
-	pin = xmldoc.getElementsByTagName('pin')[0].firstChild.data
-	host, port = client.getpeername()
-	#print 'Request=', request
-	if request== 'handshake':
-		if verify.shake(user, pin) == 0:
-			client.send('<message> <type>handshake</type> <from>earth</from> </message>')
-			socket_connected.append(client)
-			print 'Connected:', client
-			rv = 0
-		else:
-			client.send('<message> <type>error</type> <text>FAILED to authenticate user</text> </message>')
-			rv = 1
-	#verify.mailer(user, rv)
-	return rv
+    try:
+        xmldoc = minidom.parseString(raw)
+    except:
+        return 3
+    request = xmldoc.getElementsByTagName('type')[0].firstChild.data
+    user = xmldoc.getElementsByTagName('user')[0].firstChild.data
+    pin = xmldoc.getElementsByTagName('pin')[0].firstChild.data
+    host, port = client.getpeername()
+    #print 'Request=', request
+    if request == 'handshake':
+        if helper.auth_user(user, pin):
+            client.send('<message> <type>handshake</type> <from>earth</from> </message>')
+            socket_connected.append(client)
+            print 'Connected:', client
+            rv = 0
+        else:
+            client.send('<message> <type>error</type> <text>FAILED to authenticate user</text> </message>')
+            rv = 1
+    #helper.mailer(user, rv)
+    return rv
 
 ################################################################################
 # Calibrates the Arduino board for accurate potentiometer values.
@@ -365,15 +366,15 @@ def handshake(client):
 #
 ################################################################################
 def calibrate():
-	print 'Calibrator spawned'
-	for i in range(0,2):
-		sleep(20)
-		if not test_mode:
-			arduino.write('3')
-		else:
-			print 'TEST: Sent Arduino: 3'
+    print 'Calibrator spawned'
+    for i in range(0,2):
+        sleep(20)
+        if not test_mode:
+            arduino.write('3')
+        else:
+            print 'TEST: Sent Arduino: 3'
 
-	print 'Calibrator terminated'
+    print 'Calibrator terminated'
 
 ###############################################################################
 # The Main function that spawns all other theads and monitors for socket 
@@ -387,117 +388,117 @@ def calibrate():
 #
 ###############################################################################
 def main():
-	global lock_status, log
+    global lock_status, log
 
-	# Create a PID file for the keep alive crontab
-	pid_file = open('/home/pi/Autodoor/run/autodoor.pid', 'w')
-	pid = os.getpid()
-	print 'PID: ', pid
-	pid_file.write("%s" % pid)
-	pid_file.close()
+    # Create a PID file for the keep alive crontab
+    pid_file = open('/home/door/Autodoor/run/autodoor.pid', 'w')
+    pid = os.getpid()
+    print 'PID: ', pid
+    pid_file.write("%s" % pid)
+    pid_file.close()
 
-	# Calibrate the Arduino
-	cali = Thread(target=calibrate)
-	cali.setDaemon(True)
-	cali.start()
+    # Calibrate the Arduino
+    cali = Thread(target=calibrate)
+    cali.setDaemon(True)
+    cali.start()
 
-	# Spawn a dedicated thread for each IP in the database.
-	for ip in ips:
-		if ip != '':
-			connected.append("%s" % ip)
-			queue.put(ip)
-			print 'IP:', ip
-			ip_watcher = Thread(target=pinger, args=(queue,))
-			ip_watcher.setDaemon(True)
-			ip_watcher.start()
-			sleep(1)
+    # Spawn a dedicated thread for each IP in the database.
+    for ip in ips:
+        if ip != '':
+            connected.append("%s" % ip)
+            queue.put(ip)
+            print 'IP:', ip
+            ip_watcher = Thread(target=pinger, args=(queue,))
+            ip_watcher.setDaemon(True)
+            ip_watcher.start()
+            sleep(1)
 
-	# Spawn Arduino serial monitor
-	arduino_monitor = Thread(target=arduino_watcher)
-	arduino_monitor.setDaemon(True)
-	arduino_monitor.start()
+    # Spawn Arduino serial monitor
+    arduino_monitor = Thread(target=arduino_watcher)
+    arduino_monitor.setDaemon(True)
+    arduino_monitor.start()
 
-	# Spawn console monitor
-	console_monitor = Thread(target=console_watcher)
-	console_monitor.setDaemon(True)
-	console_monitor.start()
+    # Spawn console monitor
+    console_monitor = Thread(target=console_watcher)
+    console_monitor.setDaemon(True)
+    console_monitor.start()
 
-	# Main process that will handle all socket comunications.
-	while True:
-		readable, writeable, error = select.select(socket_connected, [], [])
-		for socket in readable:
-			if(socket == server):   # New client connected
-				new_client, address = server.accept()
-				hand = handshake(new_client)
-				if hand != 0:
-					print 'Error with handshake:', hand
-			else:   # Existing client
-				try:
-					data = socket.recv(size)
-					data = data.strip()
-					data = data.split('\n')
-					print 'Recived:', data
-					#socket.send('hello')
-				except:
-					pass
-				for message in data:
-					if message != '':
-						# XML parse message
-						try:
-							xmldoc = minidom.parseString(message)
-						except:
-							socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
-						request = xmldoc.getElementsByTagName('type')[0].firstChild.data
-						user = xmldoc.getElementsByTagName('user')[0].firstChild.data
-						print 'User:', user, 'type', request
-						if (request == 'status'):
-							# Call get status from autodoor.py
-							if not test_mode:
-								arduino.write('2')
-							else:
-								print 'TEST: Sent Arduino "2" (Get Status)'
-							sleep(1)
-							if lock_status == 1:
-								socket.send('<message> <type>status</type> <text>locked</text> </message>')    
-							else:
-								socket.send('<message> <type>status</type> <text>unlocked</text> </message>')    
-						elif (request == 'lock'):
-							#    # Send lock signal to autodoor.py
-							if not test_mode:
-								arduino.write('1')
-							else:
-								print 'TEST: Sent Arduino "1" (Lock)'
-							socket.send('<message> <type>ack</type> <text>locking</text> </message>')    
-						elif (request == 'unlock'):
-							# Send unlock signal to autodoor.py
-							if not test_mode:
-								arduino.write('0')
-							else:
-								print 'TEST: Sent Arduino "0" (Unlock)'
-							socket.send('<message> <type>ack</type> <text>unlocking</text> </message>')
-						elif (request == 'Calibrate'):
-							# Send Calibrate signal to the arduino
-							if not test_mode:
-								arduino.write('3')
-							else:
-								print 'TEST: Sent Arduino "3" (Calibrate)'
-							socket.send('<message> <type>ack</type> <text>calibrating</text> </message>')
+    # Main process that will handle all socket comunications.
+    while True:
+        readable, writeable, error = select.select(socket_connected, [], [])
+        for socket in readable:
+            if(socket == server):   # New client connected
+                new_client, address = server.accept()
+                hand = handshake(new_client)
+                if hand != 0:
+                    print 'Error with handshake:', hand
+            else:   # Existing client
+                try:
+                    data = socket.recv(size)
+                    data = data.strip()
+                    data = data.split('\n')
+                    print 'Recived:', data
+                    #socket.send('hello')
+                except:
+                    pass
+                for message in data:
+                    if message != '':
+                        # XML parse message
+                        try:
+                            xmldoc = minidom.parseString(message)
+                        except:
+                            socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
+                        request = xmldoc.getElementsByTagName('type')[0].firstChild.data
+                        user = xmldoc.getElementsByTagName('user')[0].firstChild.data
+                        print 'User:', user, 'type', request
+                        if (request == 'status'):
+                            # Call get status from autodoor.py
+                            if not test_mode:
+                                arduino.write('2')
+                            else:
+                                print 'TEST: Sent Arduino "2" (Get Status)'
+                            sleep(1)
+                            if lock_status == 1:
+                                socket.send('<message> <type>status</type> <text>locked</text> </message>')    
+                            else:
+                                socket.send('<message> <type>status</type> <text>unlocked</text> </message>')    
+                        elif (request == 'lock'):
+                            #    # Send lock signal to autodoor.py
+                            if not test_mode:
+                                arduino.write('1')
+                            else:
+                                print 'TEST: Sent Arduino "1" (Lock)'
+                            socket.send('<message> <type>ack</type> <text>locking</text> </message>')    
+                        elif (request == 'unlock'):
+                            # Send unlock signal to autodoor.py
+                            if not test_mode:
+                                arduino.write('0')
+                            else:
+                                print 'TEST: Sent Arduino "0" (Unlock)'
+                            socket.send('<message> <type>ack</type> <text>unlocking</text> </message>')
+                        elif (request == 'Calibrate'):
+                            # Send Calibrate signal to the arduino
+                            if not test_mode:
+                                arduino.write('3')
+                            else:
+                                print 'TEST: Sent Arduino "3" (Calibrate)'
+                            socket.send('<message> <type>ack</type> <text>calibrating</text> </message>')
 
-						elif (request == 'Clients'):
-							# Send Get Clients to the arduino
-							if not test_mode:
-								arduino.write('4')
-							else:
-								print 'TEST: Sent Arduino "4" (Get Clients)'
-							socket.send('<message> <type>ack</type> <text>Reciving Clients</text> </message>')
+                        elif (request == 'Clients'):
+                            # Send Get Clients to the arduino
+                            if not test_mode:
+                                arduino.write('4')
+                            else:
+                                print 'TEST: Sent Arduino "4" (Get Clients)'
+                            socket.send('<message> <type>ack</type> <text>Reciving Clients</text> </message>')
 
-						else:
-							socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
-					else:   # Client left the session
-						socket.close()
-						socket_connected.remove(socket)
-						print 'Disconnected:', socket
+                        else:
+                            socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
+                    else:   # Client left the session
+                        socket.close()
+                        socket_connected.remove(socket)
+                        print 'Disconnected:', socket
 
 
 if __name__ == "__main__":
-	main()
+    main()
