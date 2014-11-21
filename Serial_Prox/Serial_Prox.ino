@@ -13,14 +13,15 @@
 #define SENSOR_ADDR_ON_ON    (0x20)
 
 // Lock angle definitions
-#define LOCK        40
-#define UNLOCK      140
+#define LOCK        180
+#define UNLOCK      30
 
 // Time Definitions
 #define PRX_WAIT 	10000		// Time to wait before locking after proximity trigger
 #define SYS_WAIT	2			// Short pasue to allow system to catch up	
 #define RUN_WAIT	50			// Time to wait before starting loop again
 #define CAL_WAIT	1500		// Time to wait for the calibrator
+#define ADJ_WAIT	1000		// Time to wait for the Servo to adjust
 #define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
 #define AFT_WAIT	1500		// Time to wait to allow door to complete its task
 
@@ -192,7 +193,8 @@ int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data) {
 
 // Returns the position of the door.
 int door_position() {
-    return digitalRead(door_pin);
+    //return digitalRead(door_pin);
+    return 1;
 }
 
 
@@ -217,23 +219,25 @@ void calibrate () {
     door.attach(9);
     door.write(UNLOCK);
     delay(CAL_WAIT);
+    door.detach();
+    delay(ADJ_WAIT);
     // read the value of the potentiometer
     pot_unlock = analogRead(pot_pin); 
     // print out the value to the serial monitor
     Serial.print("Defined unlock: ");
     Serial.println(pot_unlock);
-    door.detach();
 
     //lock the door to read the potvalue 
     door.attach(9);
     door.write(LOCK);
     delay(CAL_WAIT);
     // read the value of the potentiometer
+    door.detach();
+    delay(ADJ_WAIT);
     pot_lock = analogRead(pot_pin); 
     // print out the value to the serial monitor
     Serial.print("Defined lock: ");
     Serial.println(pot_lock);
-    door.detach();
 }
 
 /******************************************************************************
@@ -372,6 +376,8 @@ int lock(int lock_pos) {
 	delay(AFT_WAIT);
     // Detach servo so manual override of the door can take place
     door.detach();
+
+	delay(ADJ_WAIT);
 
     return lock_status();
 }
