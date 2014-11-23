@@ -115,7 +115,7 @@ def logger(opt):
 def print_stats():
     # Create a  log file for the session
     global log
-    statfile = open('/home/pi/Autodoor/log/statistics.log', 'a')
+    statfile = open('/home/door/Autodoor/log/statistics.log', 'a')
     p = subprocess.Popen(['tmux', 'list-sessions'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
 
@@ -349,7 +349,7 @@ def handshake(client):
         if helper.auth_user(user, pin):
             client.send('<message> <type>handshake</type> <from>earth</from> </message>')
             socket_connected.append(client)
-            print 'Connected:', client
+            #print 'Connected:', client
             rv = 0
         else:
             client.send('<message> <type>error</type> <text>FAILED to authenticate user</text> </message>')
@@ -437,7 +437,7 @@ def main():
                     data = socket.recv(size)
                     data = data.strip()
                     data = data.split('\n')
-                    print 'Recived:', data
+                    #print 'Recived:', data
                     #socket.send('hello')
                 except:
                     pass
@@ -497,7 +497,7 @@ def main():
                     else:   # Client left the session
                         socket.close()
                         socket_connected.remove(socket)
-                        print 'Disconnected:', socket
+                        #print 'Disconnected:', socket
 
 
 if __name__ == "__main__":
