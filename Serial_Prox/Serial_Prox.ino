@@ -33,9 +33,9 @@ extern void melodyTone();
 
 // Varial declearation
 
-int input = 1;                // input variable from serial
+int input = 1;            // input variable from serial
 int stat;                 // Variable for lock status
-//int led_pin = 10;       // LED connected to digital pin 13
+int led_pin = 10;         // LED connected to digital pin 10 (PWM)
 int servo_pin = 9;        // Digital pin to control the servo
 int pot_pin = A0; 	  // analog pin used to connect the potentiometer
 int pot_val = -1;         // variable to read the value from the analog pin 
@@ -47,7 +47,8 @@ int trigPin = 12;         // Ultrasonic sensor trig singal out
 int echoPin = 11;         // ultrasonic sensor echo singal in 
 int duration, distance;   // Ultrasonic unlock sensor
 int Buzzer = 8;           // buzzer pin
-int door_pin = 2;         // door detector pin
+int BuzzerGnd = 7;        // buzzer GND
+int door_pin = 13;         // door detector pin
 int door_sensor = -1;     // door detector value
 int gc = 30;              // global counter
 
@@ -63,10 +64,10 @@ void setup()
     Serial.begin(9600);
 
     // Pin to connet to the pi
-    //pinMode(led_pin, OUTPUT);      // sets the digital pin as output
+    pinMode(led_pin, OUTPUT);      // sets the digital pin as output
 
     // Set door sensor as an input
-    //pinMode(door_pin, INPUT);
+    pinMode(door_pin, INPUT);
 
     // Join the I2C bus as master
     Wire.begin();
@@ -74,7 +75,9 @@ void setup()
     pinMode(trigPin, OUTPUT);
     pinMode(echoPin, INPUT);
     pinMode(Buzzer, OUTPUT);
-    pinMode(13, OUTPUT);    //led indicator when singing a note
+    pinMode(BuzzerGnd, OUTPUT);
+    digitalWrite(BuzzerGnd, LOW);
+    //pinMode(13, OUTPUT);    //led indicator when singing a note
     
     melodyTone();
     
@@ -172,12 +175,15 @@ void loop() {
       
       // Check wheater the door is open or closed using the Magetic door sensor.
       // Waits till the door is closed before locking.
-      //while (door_position() == 0);
+      while (door_position() == 1){
+        //Serial.println("door is open");
+        //delay(500);
+      }
       
       
       // lock it after about 15 (30*0.5) seconds 
       // if no more interaction detected.
-      if ( gc >= 30 ){
+      if ( gc >= 20 ){
         lock(1);
       } else {
         gc++;
@@ -357,7 +363,7 @@ void melodyTone() {
     // to calculate the note duration, take one second 
     // divided by the note type.
     //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-    int noteDuration = 1000/noteDurations[thisNote];
+    int noteDuration = 800/noteDurations[thisNote];
     tone(8, melody[thisNote],noteDuration);
 
     // to distinguish the notes, set a minimum time between them.
