@@ -13,7 +13,7 @@
 
 // Time Definitions
 #define SYS_WAIT	1000			// Short pasue to allow system to catch up	
-#define RUN_WAIT	500			// Time to wait before starting loop again
+#define RUN_WAIT	400			// Time to wait before starting loop again
 #define CAL_WAIT	1800		        // Time to wait for the calibrator
 #define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
 #define AFT_WAIT	800		        // Time to wait to allow doorlock to complete its task
@@ -176,14 +176,13 @@ void loop() {
       // Check wheater the door is open or closed using the Magetic door sensor.
       // Waits till the door is closed before locking.
       while (door_position() == 1){
-        //Serial.println("door is open");
-        //delay(500);
+        gc = 20;
       }
       
       
-      // lock it after about 15 (30*0.5) seconds 
+      // lock it after about 12 (30*0.4) seconds 
       // if no more interaction detected.
-      if ( gc >= 20 ){
+      if ( gc >= 30 ){
         lock(1);
       } else {
         gc++;
@@ -192,7 +191,7 @@ void loop() {
       gc = 0;
     }
  
-    // Run again in 0.5 s (500 ms)
+    // Run again in 0.4 s (400 ms)
     delay(RUN_WAIT);
 }
 
