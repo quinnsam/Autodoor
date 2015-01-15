@@ -45,12 +45,14 @@ int servo_pin = 9;      //Digital pin to control the servo
 int pot_pin = A0; 		// analog pin used to connect the potentiometer
 int pot_val = -1;       // variable to read the value from the analog pin 
 int pot_lock = 0;
-int pot_unlock =0;
+int pot_unlock = 0;
 int input;
 int door_pin = 2;
-
+int lockdown = 0;
 //global counter
 int gc = 0;
+int lockdown_counter = 0;
+
 int led_cool[2] = {255, 0};
 int door_sensor = -1;
 
@@ -87,7 +89,7 @@ void loop() {
     //Beginig Serial monitoring
     if (Serial.available() > 0) {
         input = Serial.read();
-        if (input == '0' || input == '1' || input == '2' || input == '3'){
+        if (input == '0' || input == '1' || input == '2' || input == '3' || input == '9'){
             if( input == '1') {
                 if (lock(1) != 1) {
                     Serial.println("ERROR: Could not execute command LOCK");
@@ -105,9 +107,17 @@ void loop() {
                 } else {
                     Serial.println("ERROR");
                 }
+            } else if ( input == '9' ) {
+                lockdown = !lockdown;
+                if ( lockdown ) {
+                    Serial.println("ATTN: LOCKDOWN ENABLED");
+                } else {
+                    Serial.println("ATTN: LOCKDOWN DISABLED");
+                }
+
             } else {
                 calibrate();
-           }
+            }
         } else {
             Serial.print("ERROR: Unreconnized command: ");
             char out = input;
@@ -156,6 +166,11 @@ void loop() {
     // lock it after about 20 (0*0.05) seconds 
     // if no more interaction detected.
     if (lock_status() != 1){
+        if ( lockdown ) {
+            lockdown_counter++;
+            if (lockdown_counter == 1)
+                Serial.println("UNLOCKED");
+        }
         if ( gc >= 1200 ){
             lock(1);
         } else {
@@ -163,6 +178,7 @@ void loop() {
         }
     } else {
       gc = 0;
+      lockdown_counter = 0;
     }
 
     // Check wheater the door is open or closed using the Magetic door sensor.
@@ -193,8 +209,8 @@ int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data) {
 
 // Returns the position of the door.
 int door_position() {
-    //return digitalRead(door_pin);
-    return 1;
+    return digitalRead(door_pin);
+    //return 1; //If no door switch
 }
 
 

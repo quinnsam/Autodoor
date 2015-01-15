@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#exit 0 # Enable for debuging
 # Location of the autodoor program
 AUTO='/home/door/Autodoor/autodoor'
 

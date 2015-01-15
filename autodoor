@@ -29,6 +29,7 @@ import getopt
 def handler(signum, frame):
     print 'Entered Sighandler'
     print_stats()
+    lock()
     sys.exit()
 
 ###############################################################################
@@ -66,6 +67,7 @@ server.listen(backlog)
 socket_connected = [server]  # Number of connected sockets
 #-----------------------------------------------------------------------------#
 test_mode = False
+lockdown = False
 #-----------------------------------------------------------------------------#
 # Class object for logging and users.
 class Log(object):
@@ -167,13 +169,13 @@ for o, a in opts:
 #
 ###############################################################################
 def lock():
-    global lock_status, log
-    if not test_mode:
+    global lock_status, log, lockdown, test_mode
+    if not (test_mode or lockdown):
         arduino.write('1')
         log[1].lock()
         #print '+1 lock func'
     else:
-        print 'TEST: Sent Arduino 1'
+        print 'Fake: Sent Arduino 1'
     #lock_status = 1
 
 ###############################################################################
@@ -184,13 +186,13 @@ def lock():
 #
 ###############################################################################
 def unlock():
-    global lock_status, log
-    if not test_mode:
+    global lock_status, log, lockdown, test_mode
+    if not (test_mode or lockdown):
         arduino.write('0')
         log[1].unlock()
         #print '+1 unlock func'
     else:
-        print 'TEST: Sent Arduino 0'
+        print 'Fake: Sent Arduino 0'
     #lock_status = 0
 
 def ip2name(ip):
@@ -229,7 +231,7 @@ def pinger(que):
     log.append(Log(name, ip_mon))
 
     # Set longer disconnect for certaint phones
-    if ip_mon == '10.0.0.72' or ip_mon == '10.0.0.54':
+    if ip_mon == '10.0.0.24':
         failed_max = 400
     else:
         # Default disconnect timeout
@@ -254,7 +256,7 @@ def pinger(que):
                 print name, ' Has connected:', datetime.datetime.now()
                 log[index].unlock()
                 if test_mode:
-                    verify.mailer(name, 2)
+                    helper.mailer(name, 2)
                 unlock()
                 sleep(60)
                 lock()
@@ -270,7 +272,7 @@ def pinger(que):
                 failed = failed + 1
                 if failed > failed_max:
                     if test_mode:
-                        verify.mailer(name, 3)
+                        helper.mailer(name, 3)
                     connected.remove(ip_mon)
                     print name, ' Disconnected:', datetime.datetime.now() 
 
@@ -281,7 +283,7 @@ def pinger(que):
 #
 ###############################################################################
 def arduino_watcher():
-    global lock_status
+    global lock_status, lockdown
     print 'Arduino watcher has spawned'
     while True:
         read = arduino.readline()
@@ -290,6 +292,8 @@ def arduino_watcher():
         if read == 'UNLOCKED':
             print 'The door is unlocked'
             lock_status = 0
+            if lockdown:
+                helper.mailer('INTRUDER', 9)
         elif read == 'LOCKED':
             print 'The door is locked'
             lock_status = 1
@@ -304,14 +308,24 @@ def arduino_watcher():
 ###############################################################################
 def console_watcher():
     print 'Console monitor has spawned'
+    global lockdown
     while True:
         console = raw_input()
         console.strip()
-        if console == '0' or console == '1' or console == '2' or console == '3':
+        if console == '0' or console == '1' or console == '2' or console == '3' or console == '9':
+            if console == '9':  #Lockdown mode enabled
+                if not lockdown:
+                    print '#####*-LOCKDOWN ENABLED-*#####'
+                    lockdown = True
+                    #arduino.write(console)
+                else:
+                    print '#####*-LOCKDOWN DISABLED-*#####'
+                    lockdown = False
+
             if not test_mode:
                 arduino.write(console)
             else:
-                print 'TEST: Sent Arduino: ', console
+                print 'Fake: Sent Arduino: ', console
         elif console == '4':
             #print connected
             print '----Connected----'
@@ -378,12 +392,13 @@ def handshake(client):
 ################################################################################
 def calibrate():
     print 'Calibrator spawned'
+    global lockdown
     #for i in range(0,2):
-    #    sleep(20)
-    #    if not test_mode:
-    #        arduino.write('3')
-    #    else:
-    #        print 'TEST: Sent Arduino: 3'
+    sleep(10)
+    if not (test_mode or lockdown):
+        arduino.write('3')
+    else:
+        print 'Fake: Sent Arduino: 3'
 
     print 'Calibrator terminated'
 
@@ -399,7 +414,7 @@ def calibrate():
 #
 ###############################################################################
 def main():
-    global lock_status, log
+    global lock_status, log, lockdown
 
     # Create a PID file for the keep alive crontab
     pid_file = open('/home/door/Autodoor/run/autodoor.pid', 'w')
@@ -475,24 +490,18 @@ def main():
                                 socket.send('<message> <type>status</type> <text>unlocked</text> </message>')    
                         elif (request == 'lock'):
                             #    # Send lock signal to autodoor.py
-                            if not test_mode:
-                                arduino.write('1')
-                            else:
-                                print 'TEST: Sent Arduino "1" (Lock)'
+                            lock()
                             socket.send('<message> <type>ack</type> <text>locking</text> </message>')    
                         elif (request == 'unlock'):
                             # Send unlock signal to autodoor.py
-                            if not test_mode:
-                                arduino.write('0')
-                            else:
-                                print 'TEST: Sent Arduino "0" (Unlock)'
+                            unlock()
                             socket.send('<message> <type>ack</type> <text>unlocking</text> </message>')
                         elif (request == 'Calibrate'):
                             # Send Calibrate signal to the arduino
-                            if not test_mode:
+                            if not (test_mode or lockdown):
                                 arduino.write('3')
                             else:
-                                print 'TEST: Sent Arduino "3" (Calibrate)'
+                                print 'Fake: Sent Arduino "3" (Calibrate)'
                             socket.send('<message> <type>ack</type> <text>calibrating</text> </message>')
 
                         elif (request == 'Clients'):
