@@ -7,34 +7,34 @@ WWW_DIR='/var/www'
 CGI_DIR='/usr/lib/cgi-bin'
 USERNAME='pi'
 
-if [ "$(id -u)" != "0" ]; then
-echo "This script must be run as root" 1>&2
-exit 1
-fi
-
-if [ ! -d "$LOG_DIR" ]
-then
-	echo "Creating log directory"
-	mkdir -p "$LOG_DIR"
-	chown -R "$USERNAME":"$USERNAME" "$LOG_DIR"
-else
-	echo "log directory already exists"
-fi
-
-if [ ! -d "$RUN_DIR" ]
-then
-	echo "Creating run directory"
-	mkdir -p "$RUN_DIR"
-	chown -R "$USERNAME":"$USERNAME" "$RUN_DIR"
-else
-	echo "Run directory already exists"
-fi
-
-ln -s $INSTALL_DIR/html/*.jpg $WWW_DIR; ln -s $ISTALL_DIR/html/*.html $WWW_DIR; ln -s $INSTALL_DIR/html/cgi-bin/door.py $CGI_BIN/ 
-
-echo "*/2 * * * *	$USERNAME	$INSTALL_DIR/door_runtime >> $LOG_DIR/autodoor.log 2>&1" >> /etc/crontab
-
-echo "*/5 * * * *	root	$INSTALL_DIR/net_checker >> $LOG_DIR/autodoor.log 2>&1" >> /etc/crontab
+#if [ "$(id -u)" != "0" ]; then
+#echo "This script must be run as root" 1>&2
+#exit 1
+#fi
+#
+#if [ ! -d "$LOG_DIR" ]
+#then
+#	echo "Creating log directory"
+#	mkdir -p "$LOG_DIR"
+#	chown -R "$USERNAME":"$USERNAME" "$LOG_DIR"
+#else
+#	echo "log directory already exists"
+#fi
+#
+#if [ ! -d "$RUN_DIR" ]
+#then
+#	echo "Creating run directory"
+#	mkdir -p "$RUN_DIR"
+#	chown -R "$USERNAME":"$USERNAME" "$RUN_DIR"
+#else
+#	echo "Run directory already exists"
+#fi
+#
+#ln -s $INSTALL_DIR/html/*.jpg $WWW_DIR; ln -s $ISTALL_DIR/html/*.html $WWW_DIR; ln -s $INSTALL_DIR/html/cgi-bin/door.py $CGI_BIN/ 
+#
+#echo "*/2 * * * *	$USERNAME	$INSTALL_DIR/door_runtime >> $LOG_DIR/autodoor.log 2>&1" >> /etc/crontab
+#
+#echo "*/5 * * * *	root	$INSTALL_DIR/net_checker >> $LOG_DIR/autodoor.log 2>&1" >> /etc/crontab
 
 echo "AVR_TOOLS_DIR       =/usr" > $INSTALL_DIR/Serial_Prox/Makefile
 echo "ARDUINO_DIR         =$INSTALL_DIR/src/arduino_lib" >> $INSTALL_DIR/Serial_Prox/Makefile

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import socket
-import cgi, cgitb 
+import cgi, cgitb
 
 host = '0.0.0.0'
 port = 5555
@@ -13,8 +13,8 @@ request = ''
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host,port))
 
-# Create instance of FieldStorage 
-form = cgi.FieldStorage() 
+# Create instance of FieldStorage
+form = cgi.FieldStorage()
 
 # Get data from fields
 username = form.getvalue('username')
@@ -31,12 +31,12 @@ print '<h2>Contacting Earth to unlock the door, now.</h2>'
 if request == None:
 	data = 'Unsuported Browser.. for now sorry! :('
 
-if username != '' and password != '' and request != '' and request != None:
+if username != None and password != None and request != '' and request != None:
 	message = "<message><type>handshake</type><user>%s</user><pin>%s</pin></message>" % (username, password)
 	s.send(message)
 	data = s.recv(size)
 	#print "<p>User:%s, pin:%s, Request:(%s)</p>" % (username, password, request)
-		
+
 	if data == '<message> <type>handshake</type> <from>earth</from> </message>':
 		print "<h2>PASSED</h2>"
 		message = "<message> <type>%s</type> <user>%s</user> </message>" % (request, username)

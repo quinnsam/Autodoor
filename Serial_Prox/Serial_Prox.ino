@@ -5,6 +5,7 @@
  ******************************************************************************/
 #include <Wire.h>
 #include <Servo.h>
+#include <Time.h>
 
 // Possible sensor addresses (suffix correspond to DIP switch positions)
 #define SENSOR_ADDR_OFF_OFF  (0x26)
@@ -102,7 +103,7 @@ void loop() {
                 stat = lock_status();
                 if (stat == 1) {
                     Serial.println("LOCKED");
-                } else if (stat == 0){
+                } else if (stat == 2){
                     Serial.println("UNLOCKED");
                 } else {
                     Serial.println("ERROR");
@@ -171,7 +172,7 @@ void loop() {
             if (lockdown_counter == 1)
                 Serial.println("UNLOCKED");
         }
-        if ( gc >= 1200 ){
+        if ( gc >= 1400 ){
             lock(1);
         } else {
             gc++;
@@ -348,6 +349,9 @@ int lock(int lock_pos) {
     int l_status = lock_status();
     int angle;
     int door_open = 1;
+    time_t door_open_time;
+
+
     if (lock_pos == 1) {
         Serial.println("----LOCKING----");
     } else if (lock_pos == 0) {
@@ -373,6 +377,7 @@ int lock(int lock_pos) {
 
     // set the servo position  
     if (angle == LOCK) {
+        door_open_time = now();
         // Waits till the door is closed before locking.
 		while (door_open == 1) {
             if (door_position() == 1) {
@@ -381,6 +386,10 @@ int lock(int lock_pos) {
                 door.write(LOCK);
                 door_open = 0;
             } else {
+                if ((now() - door_open_time) >= 900) {
+                    door_open_time = now();
+                    Serial.println("WARN");
+                }
                 continue;
             }
         }

@@ -1,3 +1,6 @@
 Autodoor.pass
 *.pyc
 run/
+helper.py
+Serial_Prox/bin/
+Serial_Prox/Makefile

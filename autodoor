@@ -231,11 +231,11 @@ def pinger(que):
     log.append(Log(name, ip_mon))
 
     # Set longer disconnect for certaint phones
-    if ip_mon == '10.0.0.24':
+    if ip_mon == '':
         failed_max = 400
     else:
         # Default disconnect timeout
-        failed_max = 10
+        failed_max = 20
 
     print 'IP watcher started for: ', ip_mon
     while True:
@@ -258,7 +258,7 @@ def pinger(que):
                 if test_mode:
                     helper.mailer(name, 2)
                 unlock()
-                sleep(60)
+                sleep(70)
                 lock()
                 sleep(10)
                 print_log = True
@@ -274,7 +274,7 @@ def pinger(que):
                     if test_mode:
                         helper.mailer(name, 3)
                     connected.remove(ip_mon)
-                    print name, ' Disconnected:', datetime.datetime.now() 
+                    print name, ' Disconnected:', datetime.datetime.now()
 
 ###############################################################################
 # Monitors the seiral comunication from the Arduino
@@ -290,13 +290,17 @@ def arduino_watcher():
         read = read.strip()
         print read
         if read == 'UNLOCKED':
-            print 'The door is unlocked'
+            #print 'The door is unlocked'
             lock_status = 0
             if lockdown:
                 helper.mailer('INTRUDER', 9)
         elif read == 'LOCKED':
-            print 'The door is locked'
+            #print 'The door is locked'
             lock_status = 1
+        elif read == 'WARN':
+            #print 'The door Has been open for more than 15 Minutes'
+            helper.mailer('WARN', 7)
+        print '-----------------'
         read = ""
 
 ###############################################################################
@@ -485,13 +489,15 @@ def main():
                                 print 'TEST: Sent Arduino "2" (Get Status)'
                             sleep(1)
                             if lock_status == 1:
-                                socket.send('<message> <type>status</type> <text>locked</text> </message>')    
+                                os.system("pb -a The door is LOCKED")
+                                #socket.send('<message> <type>status</type> <text>locked</text> </message>')
                             else:
-                                socket.send('<message> <type>status</type> <text>unlocked</text> </message>')    
+                                os.system("pb -a The door is UNLOCKED")
+                                #socket.send('<message> <type>status</type> <text>unlocked</text> </message>')
                         elif (request == 'lock'):
-                            #    # Send lock signal to autodoor.py
+                            # Send lock signal to autodoor.py
                             lock()
-                            socket.send('<message> <type>ack</type> <text>locking</text> </message>')    
+                            socket.send('<message> <type>ack</type> <text>locking</text> </message>')
                         elif (request == 'unlock'):
                             # Send unlock signal to autodoor.py
                             unlock()
@@ -503,14 +509,21 @@ def main():
                             else:
                                 print 'Fake: Sent Arduino "3" (Calibrate)'
                             socket.send('<message> <type>ack</type> <text>calibrating</text> </message>')
+                        elif (request == 'status'):
+                            # Query the status of the door
+                            arduino.write('2')
+                            if lock_status == 0:
+                                socket.send('<message> <type>ack</type> <text>UNLOCKED</text> </message>')
+                            else:
+                                socket.send('<message> <type>ack</type> <text>LOCKED</text> </message>')
 
                         elif (request == 'Clients'):
-                            # Send Get Clients to the arduino
-                            if not test_mode:
-                                arduino.write('4')
-                            else:
-                                print 'TEST: Sent Arduino "4" (Get Clients)'
-                            socket.send('<message> <type>ack</type> <text>Reciving Clients</text> </message>')
+                            # Query connected Clients
+                            #socket.send('<message> <type>ack</type> <text>' + connected + '</text> </message>')
+                            names = []
+                            for c in connected:
+                                names.append(ip2name(c))
+                            os.system("pb -a Connected: %s" % names)
 
                         else:
                             socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
@@ -518,7 +531,6 @@ def main():
                         socket.close()
                         socket_connected.remove(socket)
                         #print 'Disconnected:', socket
-
 
 if __name__ == "__main__":
     main()
