@@ -6,7 +6,7 @@ AUTO='/home/door/Autodoor/autodoor'
 # Location of the run/pid folder
 RUN='/home/door/Autodoor/run'
 
-# Kills any tmux 0 session and starts teh Autodoor program in tmux 0
+# Kills any tmux 0 session and starts the Autodoor program in tmux 0
 start_auto() {
 	echo "############################**Run-Time**##################################"
 	date

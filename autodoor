@@ -195,6 +195,14 @@ def unlock():
         print 'Fake: Sent Arduino 0'
     #lock_status = 0
 
+###############################################################################
+# Returns the name of the user given their IP address.  
+#
+# Tasks:
+# 1.)   Rececive IP address
+# 2.)   Return the name associated with the IP
+#
+###############################################################################
 def ip2name(ip):
     if ip == '10.0.0.70':
         return "Sam"
@@ -202,6 +210,7 @@ def ip2name(ip):
         return "Zach"
     else:
         return "UNKOWN"
+
 ###############################################################################
 # This is the main while loop that will continualy monitor for clients connecting
 # and disconnecting.
@@ -225,7 +234,6 @@ def pinger(que):
 
     name = ip2name(ip_mon)
 
-
     # Creates a logging profile
     index = len(log)
     log.append(Log(name, ip_mon))
@@ -237,11 +245,10 @@ def pinger(que):
         # Default disconnect timeout
         failed_max = 20
 
-    print 'IP watcher started for: ', ip_mon
+    print 'IP watcher started for: ', name
     while True:
         current_time = datetime.datetime.now()
         #print 'Time: ', current_time.hour
-        #print 'thread' , ip_mon
         ret = subprocess.call("ping -c 2 -w 2 -n %s" % ip_mon,
                 shell=True,
                 stdout=open('/dev/null', 'w'),
@@ -390,7 +397,7 @@ def handshake(client):
 # Calibrates the Arduino board for accurate potentiometer values.
 #
 # Tasks:
-# 1.)	Wait 20 seconds
+# 1.)	Wait 10 seconds
 # 2.)	Send calibrate signal to the Arudino
 #
 ################################################################################
@@ -468,7 +475,6 @@ def main():
                     data = data.strip()
                     data = data.split('\n')
                     #print 'Recived:', data
-                    #socket.send('hello')
                 except:
                     pass
                 for message in data:
