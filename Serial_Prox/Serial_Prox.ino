@@ -6,17 +6,19 @@
 #include <Wire.h>
 #include <Servo.h>
 #include "pitches.h"
+#include <SoftwareSerial.h>
 
+SoftwareSerial XBee(2, 3); // RX, TX
 // Lock angle definitions
-#define LOCK            45
-#define UNLOCK          170
+#define LOCK            100
+#define UNLOCK          0
 
 // Time Definitions
 #define SYS_WAIT	1000			// Short pasue to allow system to catch up	
 #define RUN_WAIT	400			// Time to wait before starting loop again
-#define CAL_WAIT	1800		        // Time to wait for the calibrator
+#define CAL_WAIT	1500		        // Time to wait for the calibrator
 #define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
-#define AFT_WAIT	800		        // Time to wait to allow doorlock to complete its task
+#define AFT_WAIT	1000		        // Time to wait to allow doorlock to complete its task
 #define ERR_WAIT	1000		        // Time to wait to redo after ERROR
 #define STAT_WAIT	100		        // Time to wait to redo befro read the pot in lock_status()
 
@@ -37,18 +39,21 @@ int input = 1;            // input variable from serial
 int stat;                 // Variable for lock status
 int led_pin = 10;         // LED connected to digital pin 10 (PWM)
 int servo_pin = 9;        // Digital pin to control the servo
-int pot_pin = A0; 	  // analog pin used to connect the potentiometer
+int pot_pin = A0; 	      // analog pin used to connect the potentiometer
 int pot_val = -1;         // variable to read the value from the analog pin 
-int pot_mid = 300;        // pot variable for calibrate bidirectional
-int pot_lock = 0;         // pot value for lock
+int pot_mid = 190;        // pot variable for calibrate bidirectional
+int pot_lock = 250;       // pot value for lock
 int pot_unlock = 0;       // pot value for unlock
-int pot_tole = 50;        // pot variable for pot tolerance
+int pot_tole = 100;       // pot variable for pot tolerance
 int trigPin = 12;         // Ultrasonic sensor trig singal out 
 int echoPin = 11;         // ultrasonic sensor echo singal in 
+int uSpower = 4;          // ultrasonic sensor Power 
+int uSgnd = 5;            // ultrasonic sensor GND
+int xbeeIn = 6;           // xbee input pin       
 int duration, distance;   // Ultrasonic unlock sensor
 int Buzzer = 8;           // buzzer pin
 int BuzzerGnd = 7;        // buzzer GND
-int door_pin = 13;         // door detector pin
+int door_pin = 13;        // door detector pin
 int door_sensor = -1;     // door detector value
 int gc = 30;              // global counter
 
@@ -62,7 +67,8 @@ void setup()
 {
     // Start the serial port for output
     Serial.begin(9600);
-
+    XBee.begin(9600);
+    
     // Pin to connet to the pi
     pinMode(led_pin, OUTPUT);      // sets the digital pin as output
 
@@ -74,17 +80,21 @@ void setup()
     
     pinMode(trigPin, OUTPUT);
     pinMode(echoPin, INPUT);
+    pinMode(uSpower, OUTPUT);
+    pinMode(uSgnd, OUTPUT);
     pinMode(Buzzer, OUTPUT);
     pinMode(BuzzerGnd, OUTPUT);
+    pinMode(xbeeIn, INPUT);
     digitalWrite(BuzzerGnd, LOW);
-    //pinMode(13, OUTPUT);    //led indicator when singing a note
+    digitalWrite(uSpower, HIGH);
+    digitalWrite(uSgnd, LOW);
     
     melodyTone();
     
     // Calibrates the definitions of the potentiometer values
     calibrate();
-    if (pot_unlock > 475)
-      calibrate();
+    //if (pot_unlock > 475)
+    //  calibrate();
       
     delay(SYS_WAIT);
 
@@ -92,107 +102,141 @@ void setup()
 
 // Main program loop
 void loop() {
-    //Beginig Serial monitoring
-    if (Serial.available() > 0) {
-        input = Serial.read();
-        if (input == '0' || input == '1' || input == '2' || input == '3'){
-            if( input == '1') {
-                if (lock(1) != 1) {
-                    Serial.println("ERROR: Could not execute command LOCK");
-                    errorTone();
-                    delay(ERR_WAIT);
-                    if (lock(1) != 1) {
-                    Serial.println("ERROR: Could not execute command LOCK");
-                    errorTone();
-                    }
-                }
-            } else if ( input == '0') {
-                if (lock(0) != 0) {
-                    Serial.println("ERROR: Could not execute command UNLOCK.");
-                    errorTone();
-                    delay(ERR_WAIT);
-                    if (lock(0) != 0) {
-                    Serial.println("ERROR: Could not execute command UNLOCK twice.");
-                    errorTone();
-                    }
-                }
-            } else if ( input == '2' ){
-                stat = lock_status();
-                if (stat == 1) {
-                    Serial.println("LOCKED");
-                } else if (stat == 0){
-                    Serial.println("UNLOCKED");
-                } else {
-                    Serial.println("ERROR");
-                }
-            } else {
-                calibrate();
-           }
-        } else {
-            Serial.print("ERROR: Unreconnized command: ");
-            char out = input;
-            Serial.print("(");
-            Serial.print(out);
-            Serial.print(")");
-        }
-    }
+  //Beginig Serial monitoring
+  if (XBee.available() > 0) {
+      input = XBee.read();
+      // If data comes in from serial monitor, send it out to XBee
+      if (input == '0' || input == '1' || input == '2' || input == '3'){
+          if( input == '1') {
+              if (lock(1) != 1) {
+                  XBee.println("ERROR: Could not execute command LOCK");
+                  errorTone();
+                  delay(ERR_WAIT);
+                  if (lock(1) != 1) {
+                  XBee.println("ERROR: Could not execute command LOCK");
+                  errorTone();
+                  }
+              }
+          } else if ( input == '0') {
+              if (lock(0) != 0) {
+                  XBee.println("ERROR: Could not execute command UNLOCK.");
+                  errorTone();
+                  delay(ERR_WAIT);
+                  if (lock(0) != 0) {
+                  XBee.println("ERROR: Could not execute command UNLOCK twice.");
+                  errorTone();
+                  }
+              }
+          } else if ( input == '2' ){
+              stat = lock_status();
+              if (stat == 1) {
+                  XBee.println("LOCKED");
+              } else if (stat == 0){
+                  XBee.println("UNLOCKED");
+              } else {
+                  XBee.println("ERROR");
+              }
+          } else {
+              calibrate();
+         }
+      } else if (byte(input) == 13){
+          //XBee.println("s/e");
+      } else {
+          XBee.print("ERROR: Unreconnized command: ");
+          byte out = input;
+          XBee.print("(");
+          XBee.print(out);
+          XBee.print(")");
+      }
+  }
 
-    // Get the distance value from the ultrasonic sensor
-    // issue : the first value will be really small
+  
+  // Get the distance value from the ultrasonic sensor
+  // issue : the first value will be really small
+  digitalWrite(trigPin, HIGH);         // transmit sound wave out
+  delayMicroseconds(10);             	 // transmit last 10 uS
+  digitalWrite(trigPin, LOW);          // stop transmit
+  duration = pulseIn(echoPin, HIGH);   // read from echo pin for travel duration
+  distance = (duration/2) / 29.1;      // calculate distance
+  // trying to solve the issue above
+  
+  if ( gc == 30 )
+    distance = 15;
+  //Serial.print("Dis1 ");
+  //Serial.println(distance);
+
+  if (distance >= 15 || distance <= 0){
+    //Serial.println("no object detected");
+    digitalWrite(Buzzer, LOW);         // do nothing 
+  }else {
+    XBee.println("Object detected");      // unlock the door
+    
+    // make sure there is a solid object;
     digitalWrite(trigPin, HIGH);         // transmit sound wave out
-    delayMicroseconds(10);             	 // transmit last 10 uS
+    delayMicroseconds(10);                // transmit last 10 uS
     digitalWrite(trigPin, LOW);          // stop transmit
     duration = pulseIn(echoPin, HIGH);   // read from echo pin for travel duration
     distance = (duration/2) / 29.1;      // calculate distance
-    // trying to solve the issue above
     
-    if ( gc == 30 )
-      distance = 15;
-//  S erial.print("Dis ");
-//  Serial.println(distance);
+    //Serial.print("Dis2 ");
+    //Serial.println(distance);
 
     if (distance >= 15 || distance <= 0){
       //Serial.println("no object detected");
       digitalWrite(Buzzer, LOW);         // do nothing 
     }else {
-      Serial.println("Object detected");      // unlock the door
-      
+      XBee.println("Solid object detected");      // unlock the door
       if (lock(0) != 0) {
-        Serial.println("ERROR: Could not execute command UNLOCK");
+        XBee.println("ERROR: Could not execute command UNLOCK");
         errorTone();
         delay(ERR_WAIT);
         if (lock(0) != 0) {
-          Serial.println("ERROR: Could not execute command UNLOCK");
+          XBee.println("ERROR: Could not execute command UNLOCK");
           errorTone();
         }
       }
       delay(AFT_WAIT);
     }
+  }
 
-    // check if the door is unlocked. 
+  // check if the door is unlocked. 
 
-    if (lock_status() != 1){
-      
-      // Check wheater the door is open or closed using the Magetic door sensor.
-      // Waits till the door is closed before locking.
-      while (door_position() == 1){
-        gc = 20;
-      }
-      
-      
-      // lock it after about 12 (30*0.4) seconds 
-      // if no more interaction detected.
-      if ( gc >= 30 ){
-        lock(1);
-      } else {
-        gc++;
-      }
-    } else {
-      gc = 0;
+  if (lock_status() != 1){
+    
+    // Check wheater the door is open or closed using the Magetic door sensor.
+    // Waits till the door is closed before locking.
+    while (door_position() == 1){
+      gc = 20;
     }
+    
+    
+    // lock it after about 12 (30*0.4) seconds 
+    // if no more interaction detected.
+    if ( gc >= 30 ){
+      lock(1);
+    } else {
+      gc++;
+    }
+  } else {
+    gc = 0;
+  }
+
+//  if (digitalRead(xbeeIn) == 0){
+//    if (lock(1) != 1) {
+//      Serial.println("ERROR: Could not execute command LOCK");
+//      errorTone();
+//      delay(ERR_WAIT);
+//    }
+//  }else if (digitalRead(xbeeIn) == 1){
+//    if (lock(0) != 0) {
+//      Serial.println("ERROR: Could not execute command UNLOCK");
+//      errorTone();
+//      delay(ERR_WAIT);
+//    }
+//  }
  
-    // Run again in 0.4 s (400 ms)
-    delay(RUN_WAIT);
+  // Run again in 0.4 s (400 ms)
+  delay(RUN_WAIT);
 }
 
 // Returns the position of the door.
@@ -220,8 +264,8 @@ void calibrate_unlock () {
     // read the value of the potentiometer
     pot_unlock = analogRead(pot_pin); 
     // print out the value to the serial monitor
-    Serial.print("Defined unlock: ");
-    Serial.println(pot_unlock);
+    XBee.print("Defined unlock: ");
+    XBee.println(pot_unlock);
 }
 
 void calibrate_lock () {
@@ -233,8 +277,8 @@ void calibrate_lock () {
     // read the value of the potentiometer
     pot_lock = analogRead(pot_pin); 
     // print out the value to the serial monitor
-    Serial.print("Defined lock: ");
-    Serial.println(pot_lock);
+    XBee.print("Defined lock: ");
+    XBee.println(pot_lock);
 }
 
 /******************************************************************************
@@ -256,7 +300,7 @@ int lock_status() {
 
     //print_info();
     
-    if(pot_val > (pot_lock - pot_tole) && pot_val < (pot_lock + pot_tole)){
+    if(pot_val > 200 && pot_val < (pot_lock + pot_tole)){
 	rv = 1;
     } else if(pot_val > (pot_unlock - pot_tole) && pot_val < (pot_unlock + pot_tole)) {
         rv = 0;
@@ -283,12 +327,12 @@ void print_info() {
 
     //print out the value to the serial monitor
 
-    Serial.print("pot_val: ");
-    Serial.println(pot_val);
-    Serial.print("pot_unlock: ");
-    Serial.println(pot_unlock);
-    Serial.print("pot_lock: ");
-    Serial.println(pot_lock);
+    XBee.print("pot_val: ");
+    XBee.println(pot_val);
+    XBee.print("pot_unlock: ");
+    XBee.println(pot_unlock);
+    XBee.print("pot_lock: ");
+    XBee.println(pot_lock);
 
 }
 
@@ -310,16 +354,16 @@ int lock(int lock_pos) {
     int angle;
     
     if (lock_pos == 1) {
-        Serial.println("----LOCKING----");
+        XBee.println("----LOCKING----");
     } else if (lock_pos == 0) {
-        Serial.println("----UNLOCKING----");
+        XBee.println("----UNLOCKING----");
     } else {
-        Serial.print("Unreconized command for lock():");
-        Serial.println(lock_pos);
+        XBee.print("Unreconized command for lock():");
+        XBee.println(lock_pos);
     }
     // Read the position of the lock currently
     if (l_status == lock_pos) {
-        Serial.println("ALREADY ins desired state.");
+        XBee.println("ALREADY ins desired state.");
         return lock_pos;
     } else {
         //print_info();
