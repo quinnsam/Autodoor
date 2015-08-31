@@ -6,9 +6,9 @@ host = '0.0.0.0'
 port = 5555
 size = 1024
 data = 'ERROR'
-username = ''
-password = ''
-request = ''
+username = '999'
+password = '999'
+request = '999'
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host,port))
@@ -31,7 +31,7 @@ print '<h2>Contacting Earth to unlock the door, now.</h2>'
 if request == None:
 	data = 'Unsuported Browser.. for now sorry! :('
 
-if username != None and password != None and request != '' and request != None:
+if username != None and password != None and request != '' and request != None and request != '999':
 	message = "<message><type>handshake</type><user>%s</user><pin>%s</pin></message>" % (username, password)
 	s.send(message)
 	data = s.recv(size)
