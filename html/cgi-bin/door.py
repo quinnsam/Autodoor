@@ -31,22 +31,26 @@ print '<h2>Contacting Earth to unlock the door, now.</h2>'
 if request == None:
 	data = 'Unsuported Browser.. for now sorry! :('
 
-if username != None and password != None and request != '' and request != None and request != '999':
-	message = "<message><type>handshake</type><user>%s</user><pin>%s</pin></message>" % (username, password)
-	s.send(message)
-	data = s.recv(size)
-	#print "<p>User:%s, pin:%s, Request:(%s)</p>" % (username, password, request)
 
-	if data == '<message> <type>handshake</type> <from>earth</from> </message>':
-		print "<h2>PASSED</h2>"
-		message = "<message> <type>%s</type> <user>%s</user> </message>" % (request, username)
-		s.send(message)
-		data = s.recv(size)
-	else:
-		print "<h2>FAILED</h2>"
-		print "<p>Invalid Username or Password.</p>"
+if username != '999' and password != '999' and request != '999':
+    if username != '' or password != '' or request != '':
+        message = "<message><type>handshake</type><user>%s</user><pin>%s</pin></message>" % (username, password)
+        s.send(message)
+        data = s.recv(size)
+        #print "<p>User:%s, pin:%s, Request:(%s), DATA:%s</p>" % (username, password, request, data)
 
-	s.close()
+        if data == '<message> <type>handshake</type> <from>earth</from> </message>':
+            print "<h2>PASSED</h2>"
+            message = "<message> <type>%s</type> <user>%s</user> </message>" % (request, username)
+            s.send(message)
+            data = s.recv(size)
+        else:
+            print "<h2>FAILED</h2>"
+            print "<p>Invalid Username or Password.</p>"
+    else:
+        print "<h2>You sneeker no this will not werk </h2>"
+
+    s.close()
 else:
 	print "<h2>FAILED</h2>"
 	print "<p>%s: Invalid Request.</p>" % (data)

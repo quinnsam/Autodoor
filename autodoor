@@ -364,6 +364,7 @@ def console_watcher():
 ###############################################################################
 def handshake(client):
     #print 'Entered handshake with:', client
+    auth = -1
     try:
         raw = client.recv(size)
         raw = raw.strip()
@@ -383,7 +384,7 @@ def handshake(client):
     #print 'Request=', request
     if request == 'handshake':
         auth = helper.auth_user(user, pin)
-        print "Auth = %d" % (auth)
+        #print "Auth = %d" % (auth)
         if auth == 1:
             client.send('<message> <type>handshake</type> <from>earth</from> </message>')
             socket_connected.append(client)
