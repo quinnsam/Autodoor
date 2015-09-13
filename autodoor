@@ -382,7 +382,9 @@ def handshake(client):
     host, port = client.getpeername()
     #print 'Request=', request
     if request == 'handshake':
-        if helper.auth_user(user, pin):
+        auth = helper.auth_user(user, pin)
+        print "Auth = %d" % (auth)
+        if auth == 1:
             client.send('<message> <type>handshake</type> <from>earth</from> </message>')
             socket_connected.append(client)
             #print 'Connected:', client
