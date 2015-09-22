@@ -47,8 +47,6 @@ int pot_unlock = 0;       // pot value for unlock
 int pot_tole = 100;       // pot variable for pot tolerance
 int trigPin = 12;         // Ultrasonic sensor trig singal out 
 int echoPin = 11;         // ultrasonic sensor echo singal in 
-int uSpower = 4;          // ultrasonic sensor Power 
-int uSgnd = 5;            // ultrasonic sensor GND
 int xbeeIn = 6;           // xbee input pin       
 int duration, distance;   // Ultrasonic unlock sensor
 int Buzzer = 8;           // buzzer pin
@@ -80,14 +78,10 @@ void setup()
     
     pinMode(trigPin, OUTPUT);
     pinMode(echoPin, INPUT);
-    pinMode(uSpower, OUTPUT);
-    pinMode(uSgnd, OUTPUT);
     pinMode(Buzzer, OUTPUT);
     pinMode(BuzzerGnd, OUTPUT);
     pinMode(xbeeIn, INPUT);
     digitalWrite(BuzzerGnd, LOW);
-    digitalWrite(uSpower, HIGH);
-    digitalWrite(uSgnd, LOW);
     
     melodyTone();
     
