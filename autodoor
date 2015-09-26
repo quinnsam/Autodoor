@@ -48,7 +48,7 @@ lock_status = 0
 night_lock = 0
 arduino = serial.Serial('/dev/ttyUSB0', 9600)
 queue = Queue()
-ips= ['10.0.0.70', '10.0.0.24']
+ips= ['10.0.0.70', '10.0.0.24', '10.0.0.78']
 #------------------------------------------------------------------------------#
 signal.signal(signal.SIGHUP, handler)
 signal.signal(signal.SIGINT, handler)
@@ -208,6 +208,8 @@ def ip2name(ip):
         return "Sam"
     elif ip == '10.0.0.24':
         return "Zach"
+    elif ip == '10.0.0.78':
+        return "Kyle"
     else:
         return "UNKOWN"
 
