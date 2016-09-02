@@ -39,9 +39,9 @@ if username != '999' and password != '999' and request != '999':
         data = s.recv(size)
         #print "<p>User:%s, pin:%s, Request:(%s), DATA:%s</p>" % (username, password, request, data)
 
-        if data == '<message> <type>handshake</type> <from>earth</from> </message>':
+        if data == '<message><type>handshake</type><from>earth</from></message>':
             print "<h2>PASSED</h2>"
-            message = "<message> <type>%s</type> <user>%s</user> </message>" % (request, username)
+            message = "<message><type>%s</type><user>%s</user></message>" % (request, username)
             s.send(message)
             data = s.recv(size)
         else:

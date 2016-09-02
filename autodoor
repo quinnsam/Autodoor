@@ -21,7 +21,7 @@ from xml.dom import minidom
 import helper
 import sys
 import getopt
-
+import json
 
 ###############################################################################
 # Signal handler 
@@ -48,14 +48,29 @@ lock_status = 0
 night_lock = 0
 arduino = serial.Serial('/dev/ttyUSB0', 9600)
 queue = Queue()
-ips= ['10.0.0.70', '10.0.0.24', '10.0.0.78']
+
+# Get the config file 
+#------------------------------------------------------------------------------#
+try:
+    with open('Autodoor.json') as data_file:
+        config = json.load(data_file)
+except:
+    print 'ERROR: Could not load config file (Autodoor.json)'
+    sys.exit(1)
+#------------------------------------------------------------------------------#
+
+# Get the IPs for each user
+#------------------------------------------------------------------------------#
+ips= []
+for i in config['users']:
+    ips.append(i['ip'])
 #------------------------------------------------------------------------------#
 signal.signal(signal.SIGHUP, handler)
 signal.signal(signal.SIGINT, handler)
 signal.signal(signal.SIGQUIT, handler)
 #-----------------------------------------------------------------------------#
 host = ''   # Sets the host to localhost
-port = 5555
+port = int(config['port'])
 backlog = 5
 size = 1024
 #-----------------------------------------------------------------------------#
@@ -204,14 +219,10 @@ def unlock():
 #
 ###############################################################################
 def ip2name(ip):
-    if ip == '10.0.0.70':
-        return "Sam"
-    elif ip == '10.0.0.24':
-        return "Zach"
-    elif ip == '10.0.0.78':
-        return "Kyle"
-    else:
-        return "UNKOWN"
+    for i in config['users']:
+        if i['ip'] == ip:
+            return i['id']
+    return "UNKOWN"
 
 ###############################################################################
 # This is the main while loop that will continualy monitor for clients connecting
@@ -366,34 +377,37 @@ def console_watcher():
 ###############################################################################
 def handshake(client):
     #print 'Entered handshake with:', client
+    rv = 1
     auth = -1
+    user = ""
+    pin = ""
+    #print 'handshake: ', client.recv(size)
     try:
         raw = client.recv(size)
-        raw = raw.strip()
     except:
-        return 2
-
-    #print 'Recived:', raw
+        print 'ERROR: Could not parse message in raw except'
+        return rv
 
     try:
         xmldoc = minidom.parseString(raw)
     except:
-        return 3
+        print 'ERROR: Could not parse XML'
+        return rv
+
     request = xmldoc.getElementsByTagName('type')[0].firstChild.data
     user = xmldoc.getElementsByTagName('user')[0].firstChild.data
     pin = xmldoc.getElementsByTagName('pin')[0].firstChild.data
     host, port = client.getpeername()
-    #print 'Request=', request
     if request == 'handshake':
         auth = helper.auth_user(user, pin)
-        #print "Auth = %d" % (auth)
+        print "Auth = %d" % (auth)
         if auth == 1:
-            client.send('<message> <type>handshake</type> <from>earth</from> </message>')
+            client.send('<message><type>handshake</type><from>earth</from></message>')
             socket_connected.append(client)
             #print 'Connected:', client
             rv = 0
         else:
-            client.send('<message> <type>error</type> <text>FAILED to authenticate user</text> </message>')
+            client.send('<message><type>error</type><text>FAILED to authenticate user</text></message>')
             rv = 1
     #helper.mailer(user, rv)
     return rv
@@ -488,7 +502,7 @@ def main():
                         try:
                             xmldoc = minidom.parseString(message)
                         except:
-                            socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
+                            socket.send('<message><type>error</type><text>Unreconized command</text></message>')
                         request = xmldoc.getElementsByTagName('type')[0].firstChild.data
                         user = xmldoc.getElementsByTagName('user')[0].firstChild.data
                         print 'User:', user, 'Type:', request, 'Time:', datetime.datetime.now()
@@ -501,43 +515,43 @@ def main():
                             sleep(1)
                             if lock_status == 1:
                                 os.system("pb -a The door is LOCKED")
-                                #socket.send('<message> <type>status</type> <text>locked</text> </message>')
+                                #socket.send('<message><type>status</type><text>locked</text></message>')
                             else:
                                 os.system("pb -a The door is UNLOCKED")
-                                #socket.send('<message> <type>status</type> <text>unlocked</text> </message>')
+                                #socket.send('<message><type>status</type><text>unlocked</text></message>')
                         elif (request == 'lock'):
                             # Send lock signal to autodoor.py
                             lock()
-                            socket.send('<message> <type>ack</type> <text>locking</text> </message>')
+                            socket.send('<message><type>ack</type><text>locking</text></message>')
                         elif (request == 'unlock'):
                             # Send unlock signal to autodoor.py
                             unlock()
-                            socket.send('<message> <type>ack</type> <text>unlocking</text> </message>')
+                            socket.send('<message><type>ack</type><text>unlocking</text></message>')
                         elif (request == 'Calibrate'):
                             # Send Calibrate signal to the arduino
                             if not (test_mode or lockdown):
                                 arduino.write('3')
                             else:
                                 print 'Fake: Sent Arduino "3" (Calibrate)'
-                            socket.send('<message> <type>ack</type> <text>calibrating</text> </message>')
+                            socket.send('<message><type>ack</type><text>calibrating</text></message>')
                         elif (request == 'status'):
                             # Query the status of the door
                             arduino.write('2')
                             if lock_status == 0:
-                                socket.send('<message> <type>ack</type> <text>UNLOCKED</text> </message>')
+                                socket.send('<message><type>ack</type><text>UNLOCKED</text></message>')
                             else:
-                                socket.send('<message> <type>ack</type> <text>LOCKED</text> </message>')
+                                socket.send('<message><type>ack</type><text>LOCKED</text></message>')
 
                         elif (request == 'Clients'):
                             # Query connected Clients
-                            #socket.send('<message> <type>ack</type> <text>' + connected + '</text> </message>')
+                            #socket.send('<message><type>ack</type><text>' + connected + '</text></message>')
                             names = []
                             for c in connected:
                                 names.append(ip2name(c))
                             os.system("pb -a Connected: %s" % names)
 
                         else:
-                            socket.send('<message> <type>error</type> <text>Unreconized command</text></message>')
+                            socket.send('<message><type>error</type> <text>Unreconized command</text></message>')
                     else:   # Client left the session
                         socket.close()
                         socket_connected.remove(socket)

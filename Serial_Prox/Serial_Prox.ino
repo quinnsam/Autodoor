@@ -104,7 +104,7 @@ void setup()
     // Calibrates the definitions of the potentiometer values
     //calibrate();
 
-    Serial.println("REBOOT");
+    //Serial.println("REBOOT");
 
 }
 
