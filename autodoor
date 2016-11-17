@@ -52,7 +52,7 @@ queue = Queue()
 # Get the config file 
 #------------------------------------------------------------------------------#
 try:
-    with open('Autodoor.json') as data_file:
+    with open('/home/door/Autodoor/Autodoor.json') as data_file:
         config = json.load(data_file)
 except:
     print 'ERROR: Could not load config file (Autodoor.json)'
@@ -256,16 +256,25 @@ def pinger(que):
         failed_max = 400
     else:
         # Default disconnect timeout
-        failed_max = 20
+        failed_max = 60
 
     print 'IP watcher started for: ', name
     while True:
         current_time = datetime.datetime.now()
         #print 'Time: ', current_time.hour
-        ret = subprocess.call("ping -c 2 -w 2 -n %s" % ip_mon,
-                shell=True,
-                stdout=open('/dev/null', 'w'),
-                stderr=subprocess.STDOUT)
+
+        # IPhone WOWLAN will help respond to pings faster and more reliable
+        # https://github.com/pimatic/pimatic/issues/209
+        if ip_mon == '10.0.0.50' and failed > (failed_max / 2):
+            ret = subprocess.call("sudo /usr/sbin/hping3 -2 -c 2 -p 5353 %s; ping -c 2 -w 2 -n %s" % (ip_mon,ip_mon),
+                    shell=True,
+                    stdout=open('/dev/null', 'w'),
+                    stderr=subprocess.STDOUT)
+        else:
+            ret = subprocess.call("ping -c 2 -w 2 -n %s" % (ip_mon),
+                    shell=True,
+                    stdout=open('/dev/null', 'w'),
+                    stderr=subprocess.STDOUT)
 
         if ret == 0:
             if ip_mon in connected:
@@ -274,6 +283,9 @@ def pinger(que):
             elif current_time.hour > 5 and current_time.hour < 23:
                 connected.append(ip_mon)
                 print name, ' Has connected:', datetime.datetime.now()
+                f.open("/home/door/logs/%s" % ip_mon, "a")
+                f.write("Connected[%s] - %s" % (ip_mon, datetime.datetime.now()))
+                f.close()
                 log[index].unlock()
                 if test_mode:
                     helper.mailer(name, 2)
@@ -289,6 +301,9 @@ def pinger(que):
 
         else :
             if ip_mon in connected:
+                f.open("/home/door/logs/%s" % ip_mon, "a")
+                f.write("Failed[%s] - %s" % (ip_mon, datetime.datetime.now()))
+                f.close()
                 failed = failed + 1
                 if failed > failed_max:
                     if test_mode:
@@ -379,8 +394,8 @@ def handshake(client):
     #print 'Entered handshake with:', client
     rv = 1
     auth = -1
-    user = ""
-    pin = ""
+    user = ''
+    pin = ''
     #print 'handshake: ', client.recv(size)
     try:
         raw = client.recv(size)
@@ -398,6 +413,7 @@ def handshake(client):
     user = xmldoc.getElementsByTagName('user')[0].firstChild.data
     pin = xmldoc.getElementsByTagName('pin')[0].firstChild.data
     host, port = client.getpeername()
+    #print "raw: %s; request: %s; user:%s; pin:%s" % (raw,request,user,pin)
     if request == 'handshake':
         auth = helper.auth_user(user, pin)
         print "Auth = %d" % (auth)
