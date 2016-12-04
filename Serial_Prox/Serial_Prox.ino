@@ -6,8 +6,11 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <Time.h>
-#include <Keypad.h>
 
+#include <Adafruit_PWMServoDriver.h>
+
+//Servo Controller i2c
+Adafruit_PWMServoDriver door = Adafruit_PWMServoDriver(0x40);
 // Possible sensor addresses (suffix correspond to DIP switch positions)
 #define SENSOR_ADDR_OFF_OFF  (0x26)
 #define SENSOR_ADDR_OFF_ON   (0x22)
@@ -15,20 +18,27 @@
 #define SENSOR_ADDR_ON_ON    (0x20)
 
 // Lock angle definitions
-#define LOCK        30
-#define UNLOCK      180
+#define LOCK        600
+#define UNLOCK      1990
 
 // Time Definitions
-#define PRX_WAIT 	10000		// Time to wait before locking after proximity trigger
-#define SYS_WAIT	2			// Short pasue to allow system to catch up	
-#define RUN_WAIT	50			// Time to wait before starting loop again
-#define CAL_WAIT	1500		// Time to wait for the calibrator
-#define ADJ_WAIT	1000		// Time to wait for the Servo to adjust
-#define DSR_WAIT	500			// Delay before locking after the door sensor is triggered
-#define AFT_WAIT	1500		// Time to wait to allow door to complete its task
+#define PRX_WAIT   10000   // Time to wait before locking after proximity trigger
+#define SYS_WAIT  2     // Short pasue to allow system to catch up  
+#define RUN_WAIT  50      // Time to wait before starting loop again
+#define CAL_WAIT  1500    // Time to wait for the calibrator
+#define ADJ_WAIT  1000    // Time to wait for the Servo to adjust
+#define DSR_WAIT  1500     // Delay before locking after the door sensor is triggered
+#define AFT_WAIT  500    // Time to wait to allow door to complete its task
 
 // Keypad Initilazation code
 #define KEY_INIT "#*#*0"
+
+// Depending on your servo make, the pulse width min and max may vary, you 
+// want these to be as small/large as possible without hitting the hard stop
+// for max range. You'll have to tweak them as necessary to match the servos you
+// have!
+#define SERVOMIN  500 // this is the 'minimum' pulse length count (out of 4096)
+#define SERVOMAX  2500 // this is the 'maximum' pulse length count (out of 4096)
 
 // Functions declarations
 extern int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data);
@@ -45,26 +55,26 @@ extern void reset_keypad();
 
 // Set the sensor address here
 const uint8_t sensorAddr = SENSOR_ADDR_OFF_OFF;
-// Keypad varibles
-int key_init_pass = 0;
-char key_init[6] {'a','b','c','d','e','\0'};
-char pin_code[5] {'a','b','c','d','\0'};
-int charater_counter = 0;
-time_t reset_timer;
-const byte ROWS = 4; //four rows
-const byte COLS = 3; //three columns
-char keys[ROWS][COLS] = {
-    {'1','2','3'},
-    {'4','5','6'},
-    {'7','8','9'},
-    {'*','0','#'}
-};
+//// Keypad varibles
+//int key_init_pass = 0;
+//char key_init[6] {'a','b','c','d','e','\0'};
+//char pin_code[5] {'a','b','c','d','\0'};
+//int charater_counter = 0;
+//time_t reset_timer;
+//const byte ROWS = 4; //four rows
+//const byte COLS = 3; //three columns
+//char keys[ROWS][COLS] = {
+//    {'1','2','3'},
+//    {'4','5','6'},
+//    {'7','8','9'},
+//    {'*','0','#'}
+//};
 // Pins
 int led_pin = 11;       // LED connected to digital pin 13
 int servo_pin = 10;      //Digital pin to control the servo
-int pot_pin = A0; 		// analog pin used to connect the potentiometer
-byte rowPins[ROWS] = {3, 4, 5, 6}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {7, 8, 9}; //connect to the column pinouts of the keypad
+int pot_pin = A0;     // analog pin used to connect the potentiometer
+//byte rowPins[ROWS] = {3, 4, 5, 6}; //connect to the row pinouts of the keypad
+//byte colPins[COLS] = {7, 8, 9}; //connect to the column pinouts of the keypad
 int door_pin = 2;
 // Global Varibles
 int pot_val = -1;       // variable to read the value from the analog pin 
@@ -79,9 +89,9 @@ int led_cool[2] = {255, 0};
 int door_sensor = -1;
 
 // Servo Object
-Servo door;
+//Servo door;
 // Keypad Object
-Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
+//Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 // One-time setup
 void setup()
@@ -93,13 +103,17 @@ void setup()
     pinMode(led_pin, OUTPUT);      // sets the digital pin as output
 
     // Set door sensor as an input
-    pinMode(door_pin, INPUT);
+    pinMode(door_pin, INPUT_PULLUP);
 
     // Join the I2C bus as master
     Wire.begin();
 
     // Adrress for the proximity sensor 
     WriteByte(sensorAddr, 0x3, 0xFE);
+
+    door.begin();
+    door.setPWMFreq(330);  // Analog servos run at ~60 Hz updates
+    yield();
 
     // Calibrates the definitions of the potentiometer values
     //calibrate();
@@ -113,41 +127,41 @@ void loop() {
     int stat;
 
     // Keypad code
-    char key = keypad.getKey();
-    if (key != NO_KEY){
-        if (charater_counter < 5 && key_init_pass == 0){
-            key_init[charater_counter] = key;
-            if (strcmp(key_init, KEY_INIT) == 0){
-                key_init_pass = 1;
-                charater_counter = -1;
-            }
-        } else {
-            if (charater_counter < 4) {
-                pin_code[charater_counter] = key;
-                if (strcmp(pin_code, "1234") == 0){
-                    if (lock(0) != 0) {
-                        Serial.println("ERROR: Could not execute command UNLOCK");
-                    }
-                    reset_keypad();
-                }
-            } else {
-                key_init_pass = 0;
-                charater_counter = -1;
-            }
-        }
-
-
-        Serial.print("Initalizer: ");
-        Serial.println(key_init);
-        Serial.print("Pin: ");
-        Serial.println(pin_code);
-        charater_counter++;
-        reset_timer = now();
-    }
-    
-    if (now() - reset_timer > 5 && now() - reset_timer < 10) {
-       reset_keypad(); 
-    }
+//    char key = keypad.getKey();
+//    if (key != NO_KEY){
+//        if (charater_counter < 5 && key_init_pass == 0){
+//            key_init[charater_counter] = key;
+//            if (strcmp(key_init, KEY_INIT) == 0){
+//                key_init_pass = 1;
+//                charater_counter = -1;
+//            }
+//        } else {
+//            if (charater_counter < 4) {
+//                pin_code[charater_counter] = key;
+//                if (strcmp(pin_code, "1234") == 0){
+//                    if (lock(0) != 0) {
+//                        Serial.println("ERROR: Could not execute command UNLOCK");
+//                    }
+//                    reset_keypad();
+//                }
+//            } else {
+//                key_init_pass = 0;
+//                charater_counter = -1;
+//            }
+//        }
+//
+//
+//        Serial.print("Initalizer: ");
+//        Serial.println(key_init);
+//        Serial.print("Pin: ");
+//        Serial.println(pin_code);
+//        charater_counter++;
+//        reset_timer = now();
+//    }
+//    
+//    if (now() - reset_timer > 5 && now() - reset_timer < 10) {
+//       reset_keypad(); 
+//    }
 
     //Beginig Serial monitoring
     if (Serial.available() > 0) {
@@ -279,7 +293,11 @@ int ReadByte(uint8_t addr, uint8_t reg, uint8_t *data) {
 
 // Returns the position of the door.
 int door_position() {
-    return digitalRead(door_pin);
+  if (digitalRead(door_pin)) {
+    return 1;
+  } else {
+    return 0;
+  }
     //return 1; //If no door switch
 }
 
@@ -302,10 +320,12 @@ void WriteByte(uint8_t addr, uint8_t reg, byte data) {
 
 void calibrate () {
     //unlock the door to read the potvalue 
-    door.attach(servo_pin);
-    door.write(UNLOCK);
+    //door.attach(servo_pin);
+    door.setPWM(0,0,UNLOCK);
+    //door.write(UNLOCK);
     delay(CAL_WAIT);
-    door.detach();
+    //door.detach();
+    door.setPWM(0,0,0);
     delay(ADJ_WAIT);
     // read the value of the potentiometer
     pot_unlock = analogRead(pot_pin); 
@@ -314,11 +334,13 @@ void calibrate () {
     Serial.println(pot_unlock);
 
     //lock the door to read the potvalue 
-    door.attach(servo_pin);
-    door.write(LOCK);
+    //door.attach(servo_pin);
+    door.setPWM(0,0,LOCK);
+    //door.write(LOCK);
     delay(CAL_WAIT);
     // read the value of the potentiometer
-    door.detach();
+    //door.detach();
+    door.setPWM(0,0,0);
     delay(ADJ_WAIT);
     pot_lock = analogRead(pot_pin); 
     // print out the value to the serial monitor
@@ -446,31 +468,30 @@ int lock(int lock_pos) {
     // set the servo position  
     if (angle == LOCK) {
         door_open_time = now();
-        // Waits till the door is closed before locking.
-        while (door_open == 1) {
-            if (door_position() == 1) {
-                delay(DSR_WAIT);
-                door.attach(servo_pin);
-                door.write(LOCK);
-                door_open = 0;
-            } else {
-                if ((now() - door_open_time) >= 900) {
+        while (door_position() == 1) {
+          if ((now() - door_open_time) >= 900) {
+                    Serial.println("open");
                     door_open_time = now();
                     Serial.println("WARN");
-                }
-                continue;
-            }
+          }
+          delay(500);
         }
+        delay(2000);
+        door.setPWM(0,0,LOCK);
+        door_open = 0;
         // No need to wait for the door to close to unlock
     } else {
-        door.attach(servo_pin);
-        door.write(UNLOCK);
+        //door.attach(servo_pin);
+        //door.write(UNLOCK);
+        door.setPWM(0,0,UNLOCK);
     }
     delay(AFT_WAIT);
     // Detach servo so manual override of the door can take place
-    door.detach();
+    //door.detach();
+    
 
     delay(ADJ_WAIT);
+    door.setPWM(0,0,0);
 
     return lock_status();
 }
@@ -483,10 +504,10 @@ void error_flash() {
     }
 }
 
-void reset_keypad() {
-    strcpy(key_init, "abcde");
-    strcpy(pin_code, "abcd");
-    key_init_pass = 0;
-    charater_counter = 0;
-    error_flash();
-}
+//void reset_keypad() {
+//    strcpy(key_init, "abcde");
+//    strcpy(pin_code, "abcd");
+//    key_init_pass = 0;
+//    charater_counter = 0;
+//    error_flash();
+//}
