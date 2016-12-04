@@ -204,7 +204,7 @@ def unlock():
 def ip2name(ip):
     for i in config['users']:
         if i['ip'] == ip:
-            return i['ip']
+            return i['id']
     return "UNKOWN"
 
 ###############################################################################
@@ -251,7 +251,7 @@ def adminserver():
                     data = msg.recv(size)
                     data = data.strip()
                     data = data.split('\n')
-                    print 'Recived:', data
+                    #print 'Recived:', data
                 except:
                     pass
                 for message in data:
@@ -266,8 +266,8 @@ def adminserver():
                         # Add user to the log dict if not already
                         if user not in log:
                             log[user] = Log(ip2name(user), user)
-                        print 'User: %s Connected at Time: %s' % (ip2name(user), datetime.datetime.now())
                         if (request == 'connected'):
+                            print 'User: %s Connected at Time: %s' % (ip2name(user), datetime.datetime.now())
                             # Log user connected
                             log[user].conected()
                             # Add user to the connected list
@@ -284,6 +284,7 @@ def adminserver():
                                 msg.send('<message><type>ack</type><text>toolate</text></message>')
 
                         elif (request == 'disconnected'):
+                            print 'User: %s Disconnected at Time: %s' % (ip2name(user), datetime.datetime.now())
                             # Log that the user disconnected
                             log[user].disconected()
                             msg.send('<message><type>ack</type><text>disconnecting</text></message>')

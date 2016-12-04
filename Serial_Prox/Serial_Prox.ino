@@ -15,8 +15,8 @@
 #define SENSOR_ADDR_ON_ON    (0x20)
 
 // Lock angle definitions
-#define LOCK        180
-#define UNLOCK      30
+#define LOCK        30
+#define UNLOCK      180
 
 // Time Definitions
 #define PRX_WAIT 	10000		// Time to wait before locking after proximity trigger
