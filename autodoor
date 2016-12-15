@@ -7,6 +7,8 @@
 
 from threading import Thread
 from time import sleep
+from flask import Flask, jsonify, request
+from OpenSSL import SSL
 import datetime
 import subprocess
 import serial
@@ -105,7 +107,7 @@ class Log(object):
 
 #-----------------------------------------------------------------------------#
 # Create a log dictionary
-log = {'term':Log('term',0), 'glob':Log('glob', 0)}
+log = {'term':Log('term',0), 'glob':Log('glob', 0), 'api':Log('api',0)}
 
 ###############################################################################
 # Prints the statistics from the logging function
@@ -191,8 +193,8 @@ def unlock():
     else:
         arduino.write('0')
         log['glob'].unlock()
-        sleep(70)
-        lock()
+
+
 ###############################################################################
 # Returns the name of the user given their IP address.  
 #
@@ -206,6 +208,45 @@ def ip2name(ip):
         if i['ip'] == ip:
             return i['id']
     return "UNKOWN"
+
+
+def api_server():
+    global log
+    auth = 0
+    context = SSL.Context(SSL.SSLv23_METHOD)
+    cer = os.path.join(os.path.dirname(__file__), 'autodoor.crt')
+    key = os.path.join(os.path.dirname(__file__), 'autodoor.key')
+
+    app = Flask(__name__)
+    @app.route('/autodoor/zgpWadpooVB3FVpCWa7a/unlock/', methods=['POST'])
+    def api_unlock():
+        if request.headers['content-Type'] == 'application/json':
+            data = request.json
+            user = data['name']
+            ip = data['ip']
+            passwd = data['passwd']
+            #print "User: %s Password: %s" % (user, passwd)
+            auth = helper.auth_user(user, passwd)
+            if auth == 1:
+                # Unlock the door
+                unlock()
+                # Add user to the log dict if not already
+                if ip not in log:
+                    log[ip] = Log(ip2name(ip), ip)
+                # Log that the user unlocked the door
+                log[ip].unlock()
+                # Increment API unlock.
+                log['api'].unlock()
+            return jsonify('{ "User" : "%s", "Action" : "unlock", "Auth" : "%s" }' % (user, auth))
+        else:
+            return "415 Unsupported Media Type ;)"
+
+    sleep(12)
+    lock()
+    context = (cer, key)
+    app.run(host='0.0.0.0', ssl_context=context)
+
+
 
 ###############################################################################
 # This is a while loop that will continualy monitor for clients connecting
@@ -222,6 +263,7 @@ def ip2name(ip):
 def adminserver():
     global config
     global connected
+    global log
     host = ''   # Sets the host to localhost
     adminport = int(config['adminport'])
     backlog = 5
@@ -422,6 +464,7 @@ def handshake(client):
         xmldoc = minidom.parseString(raw)
     except:
         print 'ERROR: Could not parse XML'
+        helper.push_notify('Could not parse XML')
         return rv
 
     request = xmldoc.getElementsByTagName('type')[0].firstChild.data
@@ -600,6 +643,10 @@ def main():
     webs = Thread(target=webserver)
     webs.setDaemon(True)
     webs.start()
+
+    api = Thread(target=api_server)
+    api.setDaemon(True)
+    api.start()
 
     # Spawn console monitor
     #console_monitor = Thread(target=console_watcher)

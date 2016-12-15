@@ -8,6 +8,7 @@
 #include <Time.h>
 
 #include <Adafruit_PWMServoDriver.h>
+#include <Scheduler.h>
 
 //Servo Controller i2c
 Adafruit_PWMServoDriver door = Adafruit_PWMServoDriver(0x40);
@@ -113,7 +114,7 @@ void setup()
 
     door.begin();
     door.setPWMFreq(330);  // Analog servos run at ~60 Hz updates
-    yield();
+    delay(100);
 
     // Calibrates the definitions of the potentiometer values
     //calibrate();
@@ -179,10 +180,11 @@ void loop() {
                 stat = lock_status();
                 if (stat == 1) {
                     Serial.println("LOCKED");
-                } else if (stat == 2){
+                } else if (stat == 0){
                     Serial.println("UNLOCKED");
                 } else {
-                    Serial.println("ERROR");
+                    Serial.print("ERROR:");
+                    Serial.println(analogRead(pot_pin));
                 }
             } else if ( input == '9' ) {
                 lockdown = !lockdown;
@@ -255,7 +257,7 @@ void loop() {
             if (lockdown_counter == 1)
                 Serial.println("UNLOCKED");
         }
-        if ( gc >= 1400 ){
+        if ( gc >= 400 ){
             lock(1);
         } else {
             gc++;
@@ -361,15 +363,15 @@ void calibrate () {
  ******************************************************************************/
 int lock_status() {
     int rv = -1;
+    delay(ADJ_WAIT);
 
     pot_val = analogRead(pot_pin); // read the value of the potentiometer
 
     //print_info();
 
-    if(pot_val > (pot_lock -15) && pot_val < (pot_lock + 15)){
-
+    if(pot_val >= (pot_lock -15) && pot_val <= (pot_lock + 15)){
         rv = 1;
-    } else if(pot_val > (pot_unlock -15) && pot_val < (pot_unlock + 15)) {
+    } else if(pot_val >= (pot_unlock -15) && pot_val <= (pot_unlock + 15)) {
         rv = 0;
     } else {
         rv = -1;
