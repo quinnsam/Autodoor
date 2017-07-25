@@ -4,9 +4,6 @@ mv -v /home/door/Autodoor/door_runtime /home/door/Autodoor/door_runtime.update
 touch /home/door/Autodoor/door_runtime
 
 tmux kill-session -t auto
-if [ $? != 0 ]; then
-    exit 1
-fi
 
 cd /home/door/Autodoor/Serial_Prox
 echo "Moved to $(pwd)"

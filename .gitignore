@@ -1,1 +1,13 @@
+<<<<<<< HEAD
 Serial_Prox/Serial_Prox.ino
+=======
+Autodoor.pass
+*.pyc
+run/
+helper.py
+Serial_Prox/bin/
+Serial_Prox/Makefile
+Autodoor.json
+autodoor.crt
+autodoor.key
+>>>>>>> 211ccab889c53658ec6383c1ec7c723016e10702
